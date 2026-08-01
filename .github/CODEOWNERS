@@ -1,0 +1,7 @@
+* @migberto
+
+# Canonical public contract changes require explicit maintainer review.
+/tandem.md @migberto
+/release/ @migberto
+/schemas/ @migberto
+/vectors/ @migberto

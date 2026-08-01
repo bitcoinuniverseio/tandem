@@ -1,0 +1,47 @@
+name: Product experience issue
+description: Report a problem with the public site, interaction, accessibility, or product explanation.
+title: "[Product]: "
+labels:
+  - product
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping make Tandem clearer and safer.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public report check
+      options:
+        - label: This report contains no keys, wallet data, credentials, private transactions, internal information, or suspected vulnerability details.
+          required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Public site
+        - Object journey
+        - Accessibility
+        - Product copy
+        - Mobile layout
+        - Other public experience
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: What happened?
+      description: Describe the public behavior and where you encountered it.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: access
+    attributes:
+      label: Access context
+      description: Include browser, device size, keyboard or assistive technology when relevant. Do not include personal or wallet data.

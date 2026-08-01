@@ -1,0 +1,42 @@
+# Local runtime files
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+.env
+.env.*
+!.env.example
+node_modules/
+
+# Editor state
+.idea/
+.vscode/
+*.swp
+
+# Social and marketing work belongs outside this repository
+social/
+social-media/
+social_media/
+marketing/
+campaigns/
+promotions/
+promo/
+drafts/
+screenshots/
+videos/
+*.psd
+*.ai
+*.aep
+*.prproj
+*.mp4
+*.mov
+
+# Product assets actively used by the site or documentation belong in assets/ or docs/assets/
+!assets/*.mp4
+!assets/**/*.mp4
+!assets/*.mov
+!assets/**/*.mov
+!docs/assets/*.mp4
+!docs/assets/**/*.mp4
+!docs/assets/*.mov
+!docs/assets/**/*.mov

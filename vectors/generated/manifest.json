@@ -1,0 +1,8 @@
+{
+  "schema": "urn:tandem:golden-vector-manifest",
+  "specification": "tandem.md",
+  "specHash": "caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f",
+  "fixtureFile": "golden.json",
+  "fixtureSha256": "fc4bee2c20fe94a66a9849f1dc3d73bc407179474e936de29eddef85dcfb5856",
+  "vectorRoot": "b7f22caf5c9b9f3562f4d842a60a4bb0daa3f2805a5b8ff73e4d716721882c11"
+}

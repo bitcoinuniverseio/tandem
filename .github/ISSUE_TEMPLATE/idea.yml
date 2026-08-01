@@ -1,0 +1,35 @@
+name: Public product idea
+description: Suggest a focused improvement to the public Tandem experience or integration guidance.
+title: "[Idea]: "
+labels:
+  - enhancement
+body:
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Public scope
+      options:
+        - label: This idea belongs in the public product repository under REPOSITORY_BOUNDARY.md.
+          required: true
+        - label: This idea does not assume that mainnet is active.
+          required: true
+  - type: textarea
+    id: audience
+    attributes:
+      label: Who is this for?
+      description: Describe the user or integration partner and the need they have.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Better outcome
+      description: Explain what would become easier, safer, or clearer.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed public change
+    validations:
+      required: true

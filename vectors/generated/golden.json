@@ -1,0 +1,789 @@
+{
+  "schema": "urn:tandem:golden-fixtures",
+  "specHash": "caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f",
+  "identity": {
+    "protocolId": "tndm:regtest:1010101010101010101010101010101010101010101010101010101010101010",
+    "objectDisplayId": "tandem:regtest:1010101010101010101010101010101010101010101010101010101010101010:2020202020202020202020202020202020202020202020202020202020202020:1",
+    "namespace": "38025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221",
+    "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52"
+  },
+  "markers": [
+    {
+      "operation": "INIT",
+      "payloadHex": "544e444d0103005404000034150000204e00000000000050cd0000caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f",
+      "payloadBytes": 59,
+      "scriptHex": "6a3b544e444d0103005404000034150000204e00000000000050cd0000caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f",
+      "scriptBytes": 61
+    },
+    {
+      "operation": "CREATE",
+      "payloadHex": "544e444d0103010138025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221",
+      "payloadBytes": 40,
+      "scriptHex": "6a28544e444d0103010138025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221",
+      "scriptBytes": 42
+    },
+    {
+      "operation": "MARK",
+      "payloadHex": "544e444d0103020138025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221010000000000de2e2206a8bf7075457a777a271a467a26faa75f82ceec3a2ee708c0c732b84a",
+      "payloadBytes": 78,
+      "scriptHex": "6a4c4e544e444d0103020138025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221010000000000de2e2206a8bf7075457a777a271a467a26faa75f82ceec3a2ee708c0c732b84a",
+      "scriptBytes": 81
+    },
+    {
+      "operation": "ROTATE",
+      "payloadHex": "544e444d0103030138025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d22102000000",
+      "payloadBytes": 44,
+      "scriptHex": "6a2c544e444d0103030138025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d22102000000",
+      "scriptBytes": 46
+    },
+    {
+      "operation": "CLOSE",
+      "payloadHex": "544e444d010304ff38025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221030000000000000042424527b3f6228a8ff822323935c83822439be948d634100c138faeff2402a1",
+      "payloadBytes": 80,
+      "scriptHex": "6a4c50544e444d010304ff38025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221030000000000000042424527b3f6228a8ff822323935c83822439be948d634100c138faeff2402a1",
+      "scriptBytes": 83
+    }
+  ],
+  "commitments": {
+    "chapter": "de2e2206a8bf7075457a777a271a467a26faa75f82ceec3a2ee708c0c732b84a",
+    "close": "42424527b3f6228a8ff822323935c83822439be948d634100c138faeff2402a1"
+  },
+  "carrier": {
+    "key0": "0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798",
+    "key1": "02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5",
+    "witnessScript": "52210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817982102c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee552ae",
+    "witnessScriptBytes": 71,
+    "scriptPubKey": "00209b984c7bae3efddc3a3f0a20ff81bfe89ed1fe07ff13e562149ee654bed845db"
+  },
+  "reasons": [
+    {
+      "code": 0,
+      "name": "VALID"
+    },
+    {
+      "code": 1,
+      "name": "MULTIPLE_MARKERS"
+    },
+    {
+      "code": 2,
+      "name": "BAD_MARKER_ENCODING_OR_LENGTH"
+    },
+    {
+      "code": 3,
+      "name": "UNKNOWN_MARKER_FORMAT"
+    },
+    {
+      "code": 4,
+      "name": "WRONG_NETWORK"
+    },
+    {
+      "code": 5,
+      "name": "UNKNOWN_OPCODE"
+    },
+    {
+      "code": 6,
+      "name": "WRONG_NAMESPACE"
+    },
+    {
+      "code": 7,
+      "name": "UNSUPPORTED_OR_RESERVED_FIELD"
+    },
+    {
+      "code": 16,
+      "name": "BAD_TX_VERSION_OR_LOCKTIME"
+    },
+    {
+      "code": 17,
+      "name": "BAD_INPUT_COUNT_OR_ORDER"
+    },
+    {
+      "code": 18,
+      "name": "BAD_OUTPUT_COUNT_OR_ORDER"
+    },
+    {
+      "code": 19,
+      "name": "UNCONFIRMED_OR_SAME_BLOCK_PREVOUT"
+    },
+    {
+      "code": 20,
+      "name": "BAD_INPUT_SCRIPT"
+    },
+    {
+      "code": 21,
+      "name": "BAD_KEY_ORDER_OR_BINDING"
+    },
+    {
+      "code": 22,
+      "name": "BAD_SIGNATURE_OR_SIGHASH"
+    },
+    {
+      "code": 23,
+      "name": "BAD_OUTPUT_SCRIPT_OR_VALUE"
+    },
+    {
+      "code": 24,
+      "name": "NONPOSITIVE_OR_INVALID_FEE"
+    },
+    {
+      "code": 25,
+      "name": "BAD_FEE_SPLIT_OR_CHANGE"
+    },
+    {
+      "code": 26,
+      "name": "PREDECESSOR_NOT_ACTIVE"
+    },
+    {
+      "code": 27,
+      "name": "BAD_STATE_SEQUENCE"
+    },
+    {
+      "code": 28,
+      "name": "BAD_SUCCESSOR"
+    },
+    {
+      "code": 29,
+      "name": "BAD_COMMITMENT"
+    },
+    {
+      "code": 30,
+      "name": "BAD_HEIGHT_OR_PHASE"
+    },
+    {
+      "code": 31,
+      "name": "BAD_REFUND_SHAPE_OR_MATURITY"
+    },
+    {
+      "code": 32,
+      "name": "MULTIPLE_CARRIERS"
+    },
+    {
+      "code": 48,
+      "name": "UNMARKED_CARRIER_SPEND"
+    }
+  ],
+  "validation": [
+    {
+      "name": "valid-init",
+      "relevant": true,
+      "events": [
+        {
+          "ok": true,
+          "operation": "INIT",
+          "attemptedOperation": "INIT",
+          "eventType": 0,
+          "validityClass": 1,
+          "reason": 0,
+          "reasonName": "VALID",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "valid-create",
+      "relevant": true,
+      "events": [
+        {
+          "ok": true,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 1,
+          "reason": 0,
+          "reasonName": "VALID",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": "3030"
+        }
+      ]
+    },
+    {
+      "name": "valid-mark",
+      "relevant": true,
+      "events": [
+        {
+          "ok": true,
+          "operation": "MARK",
+          "attemptedOperation": "MARK",
+          "eventType": 2,
+          "validityClass": 1,
+          "reason": 0,
+          "reasonName": "VALID",
+          "terminal": false,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "valid-rotate",
+      "relevant": true,
+      "events": [
+        {
+          "ok": true,
+          "operation": "ROTATE",
+          "attemptedOperation": "ROTATE",
+          "eventType": 3,
+          "validityClass": 1,
+          "reason": 0,
+          "reasonName": "VALID",
+          "terminal": false,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "valid-close",
+      "relevant": true,
+      "events": [
+        {
+          "ok": true,
+          "operation": "CLOSE",
+          "attemptedOperation": "CLOSE",
+          "eventType": 4,
+          "validityClass": 1,
+          "reason": 0,
+          "reasonName": "VALID",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "valid-refund",
+      "relevant": true,
+      "events": [
+        {
+          "ok": true,
+          "operation": "REFUND",
+          "attemptedOperation": "REFUND",
+          "eventType": 5,
+          "validityClass": 1,
+          "reason": 0,
+          "reasonName": "VALID",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": "340"
+        }
+      ]
+    },
+    {
+      "name": "reject-multiple-markers",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "INVALID",
+          "attemptedOperation": null,
+          "eventType": 7,
+          "validityClass": 0,
+          "reason": 1,
+          "reasonName": "MULTIPLE_MARKERS",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-marker-encoding",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "INVALID",
+          "attemptedOperation": null,
+          "eventType": 7,
+          "validityClass": 0,
+          "reason": 2,
+          "reasonName": "BAD_MARKER_ENCODING_OR_LENGTH",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-marker-format",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "INVALID",
+          "attemptedOperation": null,
+          "eventType": 7,
+          "validityClass": 0,
+          "reason": 3,
+          "reasonName": "UNKNOWN_MARKER_FORMAT",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-network",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "INVALID",
+          "attemptedOperation": null,
+          "eventType": 7,
+          "validityClass": 0,
+          "reason": 4,
+          "reasonName": "WRONG_NETWORK",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-opcode",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "INVALID",
+          "attemptedOperation": null,
+          "eventType": 7,
+          "validityClass": 0,
+          "reason": 5,
+          "reasonName": "UNKNOWN_OPCODE",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-namespace",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 6,
+          "reasonName": "WRONG_NAMESPACE",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-reserved",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "INVALID",
+          "attemptedOperation": null,
+          "eventType": 7,
+          "validityClass": 0,
+          "reason": 7,
+          "reasonName": "UNSUPPORTED_OR_RESERVED_FIELD",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-tx-version",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 16,
+          "reasonName": "BAD_TX_VERSION_OR_LOCKTIME",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-input-count",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 17,
+          "reasonName": "BAD_INPUT_COUNT_OR_ORDER",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-output-count",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 18,
+          "reasonName": "BAD_OUTPUT_COUNT_OR_ORDER",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-unconfirmed-input",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 19,
+          "reasonName": "UNCONFIRMED_OR_SAME_BLOCK_PREVOUT",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-input-script",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 20,
+          "reasonName": "BAD_INPUT_SCRIPT",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-key-binding",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 21,
+          "reasonName": "BAD_KEY_ORDER_OR_BINDING",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-signature",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 22,
+          "reasonName": "BAD_SIGNATURE_OR_SIGHASH",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-output-value",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 23,
+          "reasonName": "BAD_OUTPUT_SCRIPT_OR_VALUE",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-nonpositive-fee",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 24,
+          "reasonName": "NONPOSITIVE_OR_INVALID_FEE",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-fee-split",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 25,
+          "reasonName": "BAD_FEE_SPLIT_OR_CHANGE",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": "3030"
+        }
+      ]
+    },
+    {
+      "name": "reject-inactive-predecessor",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "MARK",
+          "attemptedOperation": "MARK",
+          "eventType": 2,
+          "validityClass": 0,
+          "reason": 26,
+          "reasonName": "PREDECESSOR_NOT_ACTIVE",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "reject-state-sequence",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "EXITED_NONCANONICAL",
+          "attemptedOperation": "MARK",
+          "eventType": 6,
+          "validityClass": 2,
+          "reason": 27,
+          "reasonName": "BAD_STATE_SEQUENCE",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "reject-successor",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "EXITED_NONCANONICAL",
+          "attemptedOperation": "MARK",
+          "eventType": 6,
+          "validityClass": 2,
+          "reason": 28,
+          "reasonName": "BAD_SUCCESSOR",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "reject-commitment",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "EXITED_NONCANONICAL",
+          "attemptedOperation": "MARK",
+          "eventType": 6,
+          "validityClass": 2,
+          "reason": 29,
+          "reasonName": "BAD_COMMITMENT",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": "1000"
+        }
+      ]
+    },
+    {
+      "name": "reject-height",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "CREATE",
+          "attemptedOperation": "CREATE",
+          "eventType": 1,
+          "validityClass": 0,
+          "reason": 30,
+          "reasonName": "BAD_HEIGHT_OR_PHASE",
+          "terminal": false,
+          "objectKey": null,
+          "feeSats": "3030"
+        }
+      ]
+    },
+    {
+      "name": "reject-refund-maturity",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "EXITED_NONCANONICAL",
+          "attemptedOperation": "REFUND",
+          "eventType": 6,
+          "validityClass": 2,
+          "reason": 31,
+          "reasonName": "BAD_REFUND_SHAPE_OR_MATURITY",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-multiple-carriers",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "EXITED_NONCANONICAL",
+          "attemptedOperation": null,
+          "eventType": 6,
+          "validityClass": 2,
+          "reason": 32,
+          "reasonName": "MULTIPLE_CARRIERS",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": null
+        },
+        {
+          "ok": false,
+          "operation": "EXITED_NONCANONICAL",
+          "attemptedOperation": null,
+          "eventType": 6,
+          "validityClass": 2,
+          "reason": 32,
+          "reasonName": "MULTIPLE_CARRIERS",
+          "terminal": true,
+          "objectKey": "f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1",
+          "feeSats": null
+        }
+      ]
+    },
+    {
+      "name": "reject-unmarked-carrier-spend",
+      "relevant": true,
+      "events": [
+        {
+          "ok": false,
+          "operation": "EXITED_NONCANONICAL",
+          "attemptedOperation": null,
+          "eventType": 6,
+          "validityClass": 2,
+          "reason": 48,
+          "reasonName": "UNMARKED_CARRIER_SPEND",
+          "terminal": true,
+          "objectKey": "5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52",
+          "feeSats": null
+        }
+      ]
+    }
+  ],
+  "roots": {
+    "events": [
+      {
+        "preimageHex": "54414e44454d2f4556454e540038025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b00400000000000000000000000000000000000002010000303030303030303030303030303030303030303030303030303030303030303031313131313131313131313131313131313131313131313131313131313131315e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52010000002020202020202020202020202020202020202020202020202020202020202020010000003030303030303030303030303030303030303030303030303030303030303030010000000279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5de2e2206a8bf7075457a777a271a467a26faa75f82ceec3a2ee708c0c732b84a",
+        "leafHex": "43c6326123f5e6c7fc02f6a90684cc5b6662ce04282f6e3fbc424376ce8058d3"
+      },
+      {
+        "preimageHex": "54414e44454d2f4556454e54000000000000000000000000000000000000000000000000000000000000000000b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b00400000000000001000000000000000000000007000200323232323232323232323232323232323232323232323232323232323232323233333333333333333333333333333333333333333333333333333333333333330000000000000000000000000000000000000000000000000000000000000000ffffffff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "leafHex": "c7adde6f3bf3222ca3e8eb6f5e1f758dac5be9cbb6b4d6ebbc8ce1e1e9de59fa"
+      },
+      {
+        "preimageHex": "54414e44454d2f4556454e540038025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b00400000000000002000000ffffffff0000000006023000343434343434343434343434343434343434343434343434343434343434343435353535353535353535353535353535353535353535353535353535353535355e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52000000002020202020202020202020202020202020202020202020202020202020202020010000000000000000000000000000000000000000000000000000000000000000000000000000000279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee50000000000000000000000000000000000000000000000000000000000000000",
+        "leafHex": "2ba6615799beaf11e9d9c7fef92f8af81b4f1192e210b5f183d20441047ae00a"
+      }
+    ],
+    "eventMerkleLevels": [
+      [
+        "43c6326123f5e6c7fc02f6a90684cc5b6662ce04282f6e3fbc424376ce8058d3",
+        "c7adde6f3bf3222ca3e8eb6f5e1f758dac5be9cbb6b4d6ebbc8ce1e1e9de59fa",
+        "2ba6615799beaf11e9d9c7fef92f8af81b4f1192e210b5f183d20441047ae00a"
+      ],
+      [
+        "1e256be47c6e916bd87b792a330361c04ba998a3247a55baa92d7a0e8f9a0fc3",
+        "ad3d0df7872b81ba68954d860eb53cd4d850dbc49497c070794da300392401e6"
+      ],
+      [
+        "475b25d221ecaa3abae67c5a4828da0b4cfe752d6cf1b55fa2dff861fae046ce"
+      ]
+    ],
+    "eventRoot": "475b25d221ecaa3abae67c5a4828da0b4cfe752d6cf1b55fa2dff861fae046ce",
+    "snapshots": [
+      {
+        "preimageHex": "54414e44454d2f4f424a4543542d5354415445005e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb5201005404000000000000010000003030303030303030303030303030303030303030303030303030303030303030010000000279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f8179802c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5000000000000000000000000000000000000000000000000000000000000000001000000",
+        "leafHex": "e91c5b4397d23535727d6526655df9671d1dadd8daf075d3e2c4cdc3ae0363b8"
+      },
+      {
+        "preimageHex": "54414e44454d2f4f424a4543542d535441544500f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f000017e040000000000000300000000000000000000000000000000000000000000000000000000000000000000000000000002e493dbf1c10d80f3581e4904930b1404cc6c13900ee0758474fa94abe8c4cd1302f9308a019258c31049344f85f89d5229b531c845836f99b08601f113bce036f9505050505050505050505050505050505050505050505050505050505050505001000000",
+        "leafHex": "afd5bb74940c6c1a728780235428ef49ed47f115dc05933318f48765ba378485"
+      }
+    ],
+    "objectMerkleLevels": [
+      [
+        "e91c5b4397d23535727d6526655df9671d1dadd8daf075d3e2c4cdc3ae0363b8",
+        "afd5bb74940c6c1a728780235428ef49ed47f115dc05933318f48765ba378485"
+      ],
+      [
+        "67ec64ab4c8645ed0d500ea71032c46026254241575979c26b9f7b207e110d79"
+      ]
+    ],
+    "objectStateRoot": "67ec64ab4c8645ed0d500ea71032c46026254241575979c26b9f7b207e110d79",
+    "initialStateRoot": "3b78dccfc48ff451703584532a1202fbccf98e456e514f7bb6ec50889eb640a0",
+    "chainedBlockRoot": "c54cd3c6423a7a35f6fa37ecceed0387e4398c55f8f6a90711c4fb906322e260"
+  }
+}
