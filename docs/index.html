@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Understand Tandem, explore its shared Bitcoin object model, review safety, and inspect the exact public protocol contract."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem documentation | Understand the shared object">
+    <meta
+      property="og:description"
+      content="A clear guide to Tandem, its Bitcoin state model, recovery boundary, public contracts, and activation status."
+    >
+    <title>Tandem documentation | Understand the shared object</title>
+    <link rel="stylesheet" href="../assets/site.css">
+  </head>
+  <body class="docs-page">
+    <a class="skip-link" href="#docs-main">Skip to documentation</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Documentation shortcuts">
+        <a href="#what-is-tandem">What it is</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#safety">Safety</a>
+        <a href="#integrations">For builders</a>
+      </nav>
+      <a class="header-link" href="../index.html#journey">Object journey</a>
+    </header>
+
+    <main id="docs-main">
+      <section class="docs-hero" id="top" aria-labelledby="docs-title">
+        <div>
+          <p class="eyebrow">The Tandem field guide</p>
+          <h1 id="docs-title">Understand the object.<br><em>Respect the boundary.</em></h1>
+          <p class="docs-hero-lede">
+            Tandem gives two people one Bitcoin-native object to shape together. This guide
+            explains the experience first, then opens the exact public contract for inspection.
+          </p>
+        </div>
+        <aside class="docs-status" aria-label="Current Tandem status">
+          <p>Current status</p>
+          <strong>Protocol finalized</strong>
+          <span>Mainnet is not active</span>
+          <a href="#roadmap">Review the readiness path</a>
+        </aside>
+      </section>
+
+      <div class="docs-shell">
+        <aside class="docs-sidebar">
+          <nav aria-label="Documentation sections">
+            <p>Explore</p>
+            <a href="#getting-started">Getting started</a>
+            <a href="#what-is-tandem">What is Tandem?</a>
+            <a href="#how-it-works">How it works</a>
+            <a href="#safety">Safety</a>
+            <a href="#use-cases">Use cases</a>
+            <a href="#integrations">Integration guide</a>
+            <a href="#protocol">Public contract</a>
+            <a href="#faq">Questions</a>
+            <a href="#roadmap">Readiness</a>
+            <a href="#security">Security</a>
+            <a href="#contribute">Contribute</a>
+            <a href="#repository-boundary">Repository boundary</a>
+          </nav>
+        </aside>
+
+        <article class="docs-content">
+          <section class="docs-section" id="getting-started" aria-labelledby="getting-started-title">
+            <p class="docs-kicker">Start here</p>
+            <h2 id="getting-started-title">Explore safely before you build.</h2>
+            <p class="docs-lede">
+              Tandem mainnet is not active. Do not construct or broadcast a Tandem transaction
+              with real funds based on this repository. You can explore the product model and
+              inspect the finalized public contract today.
+            </p>
+            <div class="docs-notice docs-notice-safety">
+              <strong>No wallet connection is required.</strong>
+              <p>
+                The interactive object journey never requests keys, creates a PSBT, signs, or
+                broadcasts. Return to the <a href="../index.html#journey">object journey</a> to
+                compare CREATE, MARK, ROTATE, CLOSE, and REFUND.
+              </p>
+            </div>
+            <div class="docs-card-grid">
+              <article>
+                <span>01</span>
+                <h3>Learn the object</h3>
+                <p>Understand shared control, continuous state, and the exact terminal paths.</p>
+                <a href="#what-is-tandem">Begin with the idea</a>
+              </article>
+              <article>
+                <span>02</span>
+                <h3>Read the safety boundary</h3>
+                <p>Know what cooperation, recovery, and independent verification can and cannot do.</p>
+                <a href="#safety">Review safety</a>
+              </article>
+              <article>
+                <span>03</span>
+                <h3>Inspect exact bytes</h3>
+                <p>Verify the normative artifact, schemas, release record, and golden fixtures.</p>
+                <a href="#protocol">Open the public contract</a>
+              </article>
+            </div>
+          </section>
+
+          <section class="docs-section" id="what-is-tandem" aria-labelledby="what-title">
+            <p class="docs-kicker">The product idea</p>
+            <h2 id="what-title">One jointly controlled object with a continuous history.</h2>
+            <p class="docs-lede">
+              Two people create the object together. An active Tandem is represented by an exact
+              native SegWit 2-of-2 output, so both current keys authorize every cooperative move.
+              The pair can add a chapter, rotate one or both keys, or close. A recovery transaction
+              prepared in advance can become usable after its relative lock matures.
+            </p>
+            <div class="docs-split">
+              <div>
+                <h3>What makes it distinct</h3>
+                <ul class="docs-list">
+                  <li><strong>Shared control is structural.</strong> Cooperation lives in the Bitcoin output, not an account permission.</li>
+                  <li><strong>The history follows exact rules.</strong> Independent implementations can derive the same canonical state.</li>
+                  <li><strong>Recovery is prepared before progress.</strong> Each state-changing parent needs a completed recovery path first.</li>
+                  <li><strong>No administrator can rewrite it.</strong> No platform key can replace participants or edit object state.</li>
+                </ul>
+              </div>
+              <div class="docs-refusal">
+                <h3>What it is not</h3>
+                <p>
+                  Tandem is not a token, marketplace, governance system, yield product, ranking
+                  system, identity proof, or promise of investment value. It does not guarantee
+                  recovery from every key-management failure or keep external content available.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="docs-section" id="how-it-works" aria-labelledby="how-title">
+            <p class="docs-kicker">Object mechanics</p>
+            <h2 id="how-title">Five paths define the shared journey.</h2>
+            <p class="docs-lede">
+              Bitcoin controls spendable outputs. Tandem classifies exact confirmed transaction
+              shapes and derives the object's deterministic state.
+            </p>
+            <ol class="docs-action-list">
+              <li>
+                <span>01</span>
+                <div><h3>Create</h3><p>Two confirmed participant inputs produce one active 20,000-sat native SegWit 2-of-2 carrier at sequence zero.</p></div>
+              </li>
+              <li>
+                <span>02</span>
+                <div><h3>Add a chapter</h3><p>MARK advances the sequence and commits a chapter hash while preserving the active key pair.</p></div>
+              </li>
+              <li>
+                <span>03</span>
+                <div><h3>Rotate control</h3><p>ROTATE advances the sequence and replaces one or both keys with a successor pair authorized by the current pair.</p></div>
+              </li>
+              <li>
+                <span>04</span>
+                <div><h3>Close</h3><p>CLOSE ends the carrier cooperatively and pays the pair equally under the exact transaction rules.</p></div>
+              </li>
+              <li>
+                <span>05</span>
+                <div><h3>Recover</h3><p>REFUND uses a markerless, pre-signed path after the required relative lock. It terminates the carrier without advancing the sequence.</p></div>
+              </li>
+            </ol>
+            <div class="docs-notice">
+              <strong>External content remains external.</strong>
+              <p>
+                Chapter and close commitments authenticate exact bytes. They do not guarantee
+                that a URI remains available, encrypted content can be decrypted, or a host keeps
+                operating.
+              </p>
+            </div>
+          </section>
+
+          <section class="docs-section" id="safety" aria-labelledby="safety-title">
+            <p class="docs-kicker">Safety</p>
+            <h2 id="safety-title">Shared control changes the risk. It does not remove it.</h2>
+            <div class="docs-safety-grid">
+              <article>
+                <h3>Keys</h3>
+                <p>Use fresh dedicated keys. Never place seed phrases, private keys, backups, credentials, or personal data in public content or support material.</p>
+              </article>
+              <article>
+                <h3>Recovery</h3>
+                <p>Complete, export, checksum, restore-test, and understand every recovery transaction before its parent is broadcast.</p>
+              </article>
+              <article>
+                <h3>Signing</h3>
+                <p>Reconstruct inputs, outputs, amounts, scripts, fees, sequences, locktime, key order, commitments, and recovery intent before signing.</p>
+              </article>
+              <article>
+                <h3>Verification</h3>
+                <p>State-changing construction and broadcast should fail closed whenever independent indexers disagree at the same canonical height.</p>
+              </article>
+              <article>
+                <h3>Content</h3>
+                <p>Treat retrieved bytes as untrusted. Enforce size and type limits, use safe rendering, and never execute retrieved content as application code.</p>
+              </article>
+              <article>
+                <h3>Privacy</h3>
+                <p>Bitcoin events are observable. Plan for permanence and correlation before committing personal, legal, location, or relationship data.</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="docs-section" id="use-cases" aria-labelledby="use-cases-title">
+            <p class="docs-kicker">Use cases</p>
+            <h2 id="use-cases-title">Strongest when meaning comes from the pair.</h2>
+            <div class="docs-case-list">
+              <article><span>Shared creative record</span><p>Two collaborators build one sequence of milestone commitments for a body of work.</p></article>
+              <article><span>Partnership archive</span><p>Two partners authenticate milestone records over time, with careful encryption and metadata planning.</p></article>
+              <article><span>Rotating stewardship</span><p>Current stewards authorize a planned successor pair without turning control into an invisible account edit.</p></article>
+              <article><span>Joint conclusion</span><p>Two participants make a cooperative ending part of the object's explicit terminal history.</p></article>
+            </div>
+            <p class="docs-footnote">
+              These are product possibilities, not claims of legal ownership, identity, privacy,
+              content availability, financial value, or mainnet activation.
+            </p>
+          </section>
+
+          <section class="docs-section" id="integrations" aria-labelledby="integrations-title">
+            <p class="docs-kicker">For builders</p>
+            <h2 id="integrations-title">Conform to one contract. Verify two independent views.</h2>
+            <p class="docs-lede">
+              Build only controlled prototypes until an authorized network deployment is
+              published. Keep mainnet construction and broadcast unavailable.
+            </p>
+            <div class="docs-checklist">
+              <h3>Before using public artifacts</h3>
+              <ol>
+                <li>Hash <code>tandem.md</code> as raw bytes and compare its digest and byte count with the release record.</li>
+                <li>Verify the golden fixture digest against the vector manifest.</li>
+                <li>Validate chapter, close, and agreement data against the exact schemas.</li>
+                <li>Reject unknown fields and preserve numeric counters represented as strings.</li>
+                <li>Treat schema validity and signer authorization as separate decisions.</li>
+              </ol>
+            </div>
+            <h3>Independent agreement</h3>
+            <p>
+              Accept a height only when two independently authorized pipelines agree on protocol
+              ID, height, block hash, event root, object-state root, chained root, and object
+              counters. Validate each pipeline's parser commit, indexer commit, parser binary hash,
+              and indexer binary hash independently against deployment trust policy. Independent
+              implementations are expected to have different provenance values.
+            </p>
+            <h3>Content manifests</h3>
+            <p>
+              Canonicalize chapter and close manifests using RFC 8785 JCS before hashing. Retrieve
+              only the payload identified by <code>content_sha256</code>, verify its bytes before
+              display, and treat URI availability as separate from on-chain validity.
+            </p>
+          </section>
+
+          <section class="docs-section" id="protocol" aria-labelledby="protocol-title">
+            <p class="docs-kicker">Public protocol contract</p>
+            <h2 id="protocol-title">Exact artifacts, stable paths, independent inspection.</h2>
+            <p class="docs-lede">
+              The normative bytes and their published checksums are intentionally exposed without
+              a build step. Verify the specification as raw bytes. Do not normalize whitespace or
+              line endings before hashing.
+            </p>
+            <div class="artifact-list">
+              <a href="../tandem.md"><span>Normative specification</span><small>Canonical protocol bytes</small></a>
+              <a href="../release/spec.json"><span>Specification release record</span><small>Digest, byte count, and finalization status</small></a>
+              <a href="../schemas/chapter.schema.json"><span>Chapter schema</span><small>Strict public manifest contract</small></a>
+              <a href="../schemas/close.schema.json"><span>Close schema</span><small>Strict terminal manifest contract</small></a>
+              <a href="../schemas/agreement-envelope.schema.json"><span>Agreement envelope schema</span><small>Signed indexer evidence contract</small></a>
+              <a href="../vectors/create-marker.example.json"><span>CREATE marker example</span><small>Minimal public marker input</small></a>
+              <a href="../vectors/generated/golden.json"><span>Golden fixture corpus</span><small>Canonical valid and invalid fixtures</small></a>
+              <a href="../vectors/generated/manifest.json"><span>Golden vector manifest</span><small>Specification, fixture, and root binding</small></a>
+            </div>
+            <div class="docs-command" aria-label="Public verification command">
+              <span>Verify locally</span>
+              <code>node scripts/verify-public.mjs</code>
+            </div>
+          </section>
+
+          <section class="docs-section" id="faq" aria-labelledby="faq-title">
+            <p class="docs-kicker">Questions</p>
+            <h2 id="faq-title">The short answers that matter.</h2>
+            <div class="docs-faq">
+              <details>
+                <summary>Is Tandem live on mainnet?</summary>
+                <p>No. The protocol is finalized, but activation requires completed verification and safety evidence plus an explicit launch decision.</p>
+              </details>
+              <details>
+                <summary>Who owns a Tandem?</summary>
+                <p>The active carrier requires both current keys for a cooperative spend. Tandem does not define legal ownership or resolve participant disputes.</p>
+              </details>
+              <details>
+                <summary>Can one person change the object alone?</summary>
+                <p>Not through a valid cooperative action. A prepared REFUND follows its own exact relative-lock rules after both signatures were completed in advance.</p>
+              </details>
+              <details>
+                <summary>Does Tandem store files on Bitcoin?</summary>
+                <p>No. Chapter and close actions can commit exact hashes. Content remains presentation data retrieved from declared URIs.</p>
+              </details>
+              <details>
+                <summary>Is Tandem a token or NFT?</summary>
+                <p>No. Tandem defines one jointly controlled object and exact state transitions. It has no issuance, marketplace, royalty, rarity, price, yield, or governance rules.</p>
+              </details>
+              <details>
+                <summary>Does independent indexing remove all trust?</summary>
+                <p>No. It reduces the risk of one parser silently presenting incorrect state. Users still depend on Bitcoin consensus, correct software, secure signing, key management, and honest status presentation.</p>
+              </details>
+            </div>
+          </section>
+
+          <section class="docs-section" id="roadmap" aria-labelledby="roadmap-title">
+            <p class="docs-kicker">Public readiness</p>
+            <h2 id="roadmap-title">Mainnet waits for proof, not a date.</h2>
+            <p class="docs-lede">
+              Activation remains closed until every required safety and verification outcome is
+              complete and an explicit launch decision is recorded.
+            </p>
+            <div class="readiness-board">
+              <div class="readiness-board-final">
+                <span>Finalized</span>
+                <ul>
+                  <li>Normative protocol bytes</li>
+                  <li>Specification hash and byte contract</li>
+                  <li>Public schemas and golden vectors</li>
+                  <li>Product explanation and repository boundary</li>
+                </ul>
+              </div>
+              <div>
+                <span>Evidence still required</span>
+                <ul>
+                  <li>Independent parser and indexer agreement</li>
+                  <li>Recovery, signer, reorganization, and fee drills</li>
+                  <li>Wallet, web, content, dependency, and infrastructure security review</li>
+                  <li>Keyboard, screen-reader, contrast, motion, and zoom validation</li>
+                  <li>Explicit activation authority after every gate is green</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section class="docs-section" id="security" aria-labelledby="security-title">
+            <p class="docs-kicker">Private reporting</p>
+            <h2 id="security-title">Protect users before publishing details.</h2>
+            <p>
+              Treat fund-loss risk, signing confusion, unsafe coin selection, incorrect recovery,
+              divergent interpretation, exposed credentials, and private conduct concerns as
+              sensitive. Never place them in a public issue.
+            </p>
+            <a class="button button-ink" href="https://github.com/bitcoinuniverse/tandem/security/advisories/new">Open a private report</a>
+            <p class="docs-footnote">
+              Begin the title with <code>Security report:</code> or <code>Conduct report:</code> so
+              maintainers can route it correctly. Include only the minimum safe reproduction or
+              context needed.
+            </p>
+          </section>
+
+          <section class="docs-section" id="contribute" aria-labelledby="contribute-title">
+            <p class="docs-kicker">Contribute</p>
+            <h2 id="contribute-title">Make the public experience clearer and safer.</h2>
+            <p>
+              Welcome contributions include accessibility improvements, responsive corrections,
+              clearer explanations, safer examples, public schema documentation, and factual or
+              typographical fixes.
+            </p>
+            <ul class="docs-list">
+              <li>Keep claims accurate about Bitcoin, custody, recovery, privacy, availability, and network status.</li>
+              <li>Never submit secrets, private transaction data, internal plans, operational procedures, or sensitive implementation detail.</li>
+              <li>Do not edit canonical bytes, schemas, release metadata, or golden vectors as part of a product copy change.</li>
+              <li>Run <code>node scripts/verify-public.mjs</code> and review visual changes across keyboard, motion, zoom, narrow, and wide conditions.</li>
+            </ul>
+          </section>
+
+          <section class="docs-section" id="repository-boundary" aria-labelledby="boundary-title">
+            <p class="docs-kicker">Repository boundary</p>
+            <h2 id="boundary-title">Public by intent, never by accident.</h2>
+            <div class="docs-split">
+              <div>
+                <h3>Belongs here</h3>
+                <ul class="docs-list">
+                  <li>The public product experience and rendered user guidance</li>
+                  <li>Deliberate protocol artifacts, schemas, and golden vectors</li>
+                  <li>Public governance, contribution, and security reporting material</li>
+                  <li>Minimal scripts and CI that serve or verify only this public tree</li>
+                </ul>
+              </div>
+              <div class="docs-refusal">
+                <h3>Stays private</h3>
+                <ul class="docs-list">
+                  <li>Implementations, indexers, databases, workers, and administrative code</li>
+                  <li>Infrastructure, deployments, operations, evidence, logs, and recovery archives</li>
+                  <li>Internal plans, architecture decisions, experiments, and incident procedures</li>
+                  <li>Credentials, keys, wallet backups, access details, and private transaction data</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </article>
+      </div>
+    </main>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="#protocol">Public contract</a>
+        <a href="#security">Private reporting</a>
+        <a href="#repository-boundary">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

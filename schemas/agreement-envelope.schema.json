@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:tandem:schema:agreement-envelope",
+  "title": "Tandem indexer agreement envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "key_id",
+    "tuple",
+    "signature"
+  ],
+  "properties": {
+    "schema": {
+      "const": "urn:tandem:agreement-envelope"
+    },
+    "key_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._:-]+$"
+    },
+    "tuple": {
+      "$ref": "#/$defs/tuple"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{128}$"
+    }
+  },
+  "$defs": {
+    "hash32": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "counter": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "tuple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "protocol_id",
+        "height",
+        "block_hash",
+        "event_root",
+        "object_state_root",
+        "chained_root",
+        "founding_created",
+        "all_objects",
+        "active_objects",
+        "parser_commit",
+        "indexer_commit",
+        "parser_binary_sha256",
+        "indexer_binary_sha256"
+      ],
+      "properties": {
+        "schema": {
+          "const": "urn:tandem:agreement-tuple"
+        },
+        "protocol_id": {
+          "type": "string",
+          "pattern": "^tndm:(mainnet|signet|testnet4|regtest):[0-9a-f]{64}$"
+        },
+        "height": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "block_hash": {
+          "$ref": "#/$defs/hash32"
+        },
+        "event_root": {
+          "$ref": "#/$defs/hash32"
+        },
+        "object_state_root": {
+          "$ref": "#/$defs/hash32"
+        },
+        "chained_root": {
+          "$ref": "#/$defs/hash32"
+        },
+        "founding_created": {
+          "$ref": "#/$defs/counter"
+        },
+        "all_objects": {
+          "$ref": "#/$defs/counter"
+        },
+        "active_objects": {
+          "$ref": "#/$defs/counter"
+        },
+        "parser_commit": {
+          "$ref": "#/$defs/commit"
+        },
+        "indexer_commit": {
+          "$ref": "#/$defs/commit"
+        },
+        "parser_binary_sha256": {
+          "$ref": "#/$defs/hash32"
+        },
+        "indexer_binary_sha256": {
+          "$ref": "#/$defs/hash32"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "schema": "urn:tandem:spec",
+  "artifact": "tandem.md",
+  "sha256": "caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f",
+  "bytes": 47343,
+  "lines": 845,
+  "encoding": "utf-8",
+  "bom": false,
+  "line_endings": "lf",
+  "final_lf_count": 1,
+  "trailing_horizontal_whitespace_lines": 0,
+  "maintainer_signatures": [],
+  "status": "finalized-not-network-active"
+}
