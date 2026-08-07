@@ -8,6 +8,8 @@ const failures = [];
 
 const approvedPaths = new Set([
   ".gitattributes",
+  ".node-version",
+  ".nvmrc",
   ".github/CODEOWNERS",
   ".github/dependabot.yml",
   ".github/ISSUE_TEMPLATE/config.yml",
