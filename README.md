@@ -6,6 +6,10 @@ This repository is the public home of Tandem. It contains the product experience
 
 > Mainnet is not active. The protocol is finalized, but activation remains closed until independent verification, recovery, security, signer, and operational gates are complete.
 
+Public-boundary verification uses PowerShell on the shared `universe-ci` pool,
+so certified Linux and Windows workers execute the same artifact checks. Fork
+pull requests remain excluded from private self-hosted execution.
+
 ## Why Tandem
 
 - **Shared from the first transaction.** Every cooperative state change requires the current pair.
