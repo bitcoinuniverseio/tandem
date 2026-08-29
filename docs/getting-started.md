@@ -30,7 +30,7 @@ Read these guides in order:
 Builders can continue with:
 
 - [Integration guide](integrations.md)
-- [Canonical protocol index](../protocol/README.md)
+- [Authoritative protocol index](../protocol/README.md)
 - [Chapter manifest schema](../schemas/chapter.schema.json)
 - [Close manifest schema](../schemas/close.schema.json)
 - [Agreement envelope schema](../schemas/agreement-envelope.schema.json)

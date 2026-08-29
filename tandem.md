@@ -361,7 +361,7 @@ SHA256("TANDEM/CLOSE\0" ||
        close_manifest_sha256)
 ```
 
-`genesis_outpoint36` is the object's CREATE outpoint. `predecessor_outpoint36` is the active carrier spent by the MARK or CLOSE. A MARK is protocol-valid when its on-chain commitment is nonzero even if no manifest is available or a supplied manifest does not match. A CLOSE may use zero to indicate no close manifest. Manifest matching is a presentation verification result and never changes an on-chain event's validity or canonical state.
+`genesis_outpoint36` is the object's CREATE outpoint. `predecessor_outpoint36` is the active carrier spent by the MARK or CLOSE. A MARK is protocol-valid when its on-chain commitment is nonzero even if no manifest is available or a supplied manifest does not match. A CLOSE may use zero to indicate no close manifest. Manifest matching is a presentation verification result and never changes an on-chain event's validity or authoritative state.
 
 ## 9. Operation validation
 
@@ -391,7 +391,7 @@ The configured INIT uses no in-place protocol replacement. If it is absent, orph
 
 A CREATE is valid only when all of the following hold:
 
-1. The configured INIT is valid and canonical.
+1. The configured INIT is valid and authoritative.
 2. Transaction version is 2 and locktime is 0.
 3. It has exactly two inputs and four outputs.
 4. Vin 0 and vin 1 each have sequence `0xfffffffd`.
@@ -488,7 +488,7 @@ The relative delay starts at the confirmation height of the exact carrier being 
 
 Every REFUND validation failure is represented by the single stable reason `BAD_REFUND_SHAPE_OR_MATURITY`.
 
-## 10. Canonical state machine
+## 10. Authoritative state machine
 
 Object statuses are:
 
@@ -510,7 +510,7 @@ ACTIVE --valid REFUND--> REFUNDED, sequence unchanged
 ACTIVE --any other confirmed carrier spend--> EXITED_NONCANONICAL, sequence unchanged
 ```
 
-Terminal objects never become active again except by canonical-chain reorganization that removes their terminal spend. CLOSED, REFUNDED, and EXITED_NONCANONICAL have no Tandem successor operation.
+Terminal objects never become active again except by authoritative-chain reorganization that removes their terminal spend. CLOSED, REFUNDED, and EXITED_NONCANONICAL have no Tandem successor operation.
 
 Any confirmed transaction that consumes an active carrier but does not validate as one allowed operation MUST atomically terminate that object as `EXITED_NONCANONICAL`. The spend is not ignored because the active UTXO no longer exists. If one transaction consumes several active carriers, every consumed object terminates. Tandem never combines, splits, or forks objects.
 
@@ -519,31 +519,31 @@ For each object:
 1. The genesis outpoint is permanently its valid CREATE outpoint `(create_txid,1)`.
 2. Sequence starts at 0.
 3. MARK, ROTATE, and CLOSE require and record exactly predecessor sequence plus one.
-4. REFUND and noncanonical exit retain the predecessor sequence.
+4. REFUND and nonauthoritative exit retain the predecessor sequence.
 5. An active object has exactly one current outpoint, one sorted current key pair, carrier value 20,000, and the greatest valid state sequence.
 6. A valid MARK alone increments `chapter_count`.
 7. A terminal object has no current outpoint, retains its last key pair and sequence, and records its terminal txid.
 8. Invalid no-state events never mutate an object or a counter.
 
-A valid CREATE is founding exactly when its canonical confirmation height lies in `[H_open,H_close)`. Founding status is immutable while that CREATE remains at that canonical height. A reorganization can remove the CREATE or change its height and therefore its founding status.
+A valid CREATE is founding exactly when its authoritative confirmation height lies in `[H_open,H_close)`. Founding status is immutable while that CREATE remains at that authoritative height. A reorganization can remove the CREATE or change its height and therefore its founding status.
 
 The post-block counters are:
 
-1. `founding_created`: all canonical valid CREATE objects whose CREATE height is in `[H_open,H_close)`, including terminal objects.
-2. `all_objects`: every canonical valid CREATE at or after `H_open`, including founding, ordinary, active, and terminal objects.
+1. `founding_created`: all authoritative valid CREATE objects whose CREATE height is in `[H_open,H_close)`, including terminal objects.
+2. `all_objects`: every authoritative valid CREATE at or after `H_open`, including founding, ordinary, active, and terminal objects.
 3. `active_objects`: every object whose post-block status is ACTIVE.
 
-CLOSE, REFUND, and noncanonical exit reduce only `active_objects`. A reorganization may change any counter. Mempool transactions never change canonical state or counters.
+CLOSE, REFUND, and nonauthoritative exit reduce only `active_objects`. A reorganization may change any counter. Mempool transactions never change authoritative state or counters.
 
 ## 11. Deterministic detection and rejection precedence
 
 ### 11.1 Block scope
 
-The configured INIT transaction is located by exact txid in the canonical chain. Blocks before its canonical confirmation block are outside this namespace's rooted history.
+The configured INIT transaction is located by exact txid in the authoritative chain. Blocks before its authoritative confirmation block are outside this namespace's rooted history.
 
 When the configured txid confirms, an indexer first validates that transaction as the configured INIT. If valid, its payload supplies `H_open` and `H_close`, and the indexer classifies every transaction in that block in transaction-index order, including transactions before and after the INIT transaction. The configured transaction itself is classified as INIT. No CREATE in that block can be valid because the INIT lead rule places `H_open` at least 1,008 blocks later.
 
-If the configured transaction is invalid, the indexer records its deterministic invalid event, sets the protocol identifier to `FAILED_INIT`, and classifies no other transaction under this namespace while that invalid INIT remains canonical. It still computes the roots specified in section 14 from the INIT block onward with an empty object set and zero counters. Later blocks have empty event sets. A reorganization that disconnects the configured transaction rolls back this result. If the same configured txid later confirms on the new canonical branch, validation starts again using its new confirmation context.
+If the configured transaction is invalid, the indexer records its deterministic invalid event, sets the protocol identifier to `FAILED_INIT`, and classifies no other transaction under this namespace while that invalid INIT remains authoritative. It still computes the roots specified in section 14 from the INIT block onward with an empty object set and zero counters. Later blocks have empty event sets. A reorganization that disconnects the configured transaction rolls back this result. If the same configured txid later confirms on the new authoritative branch, validation starts again using its new confirmation context.
 
 ### 11.2 Top-level dispatch
 
@@ -552,7 +552,7 @@ For each confirmed transaction in scope, perform these steps in order:
 1. Find all marker candidates by section 6.1.
 2. Remove foreign INIT candidates whose payload byte 6 is `0x00` and whose transaction txid is not the configured INIT txid.
 3. If this is the configured INIT txid and no marker remains, emit one class 0 event with reason `BAD_MARKER_ENCODING_OR_LENGTH`, use event type `INVALID`, set `event_index` to `0xffffffff`, and stop. This result makes the INIT fail.
-4. Join every input prevout against the active object state as it exists immediately before this transaction in canonical transaction order. The matches are `carrier_spends`.
+4. Join every input prevout against the active object state as it exists immediately before this transaction in authoritative transaction order. The matches are `carrier_spends`.
 5. If more than one marker remains, stop ordinary validation. If `carrier_spends` is empty, emit one class 0 event with reason `MULTIPLE_MARKERS`. Otherwise emit one class 2 terminal event for every carrier spend, all with reason `MULTIPLE_MARKERS`, and terminate those objects.
 6. If more than one active carrier is spent, emit one class 2 terminal event per carrier with reason `MULTIPLE_CARRIERS` and terminate them. This step applies whether zero or one marker remains.
 7. If no marker remains and exactly one carrier is spent, inspect transaction shape. If it has exactly one input and two outputs, dispatch only to REFUND recognition. A valid match emits REFUND. Any failure emits one terminal event with reason `BAD_REFUND_SHAPE_OR_MATURITY`. If it does not have exactly one input and two outputs, emit one terminal event with reason `UNMARKED_CARRIER_SPEND`.
@@ -588,7 +588,7 @@ The ordered validation groups are:
 | `0x0017` | Marker output value, fixed carrier value, CREATE carrier script, and non-successor change or payout scripts and destinations |
 | `0x0018` | Positive exact fee and checked fee arithmetic |
 | `0x0019` | Participant fee split, equal payout, sponsor arithmetic, and 1,000-satoshi change floors |
-| `0x001a` | Active canonical predecessor existence |
+| `0x001a` | Active authoritative predecessor existence |
 | `0x001b` | Exact state sequence increment and overflow prevention |
 | `0x001c` | MARK successor script preservation or ROTATE successor derivation |
 | `0x001d` | Nonzero MARK commitment |
@@ -596,7 +596,7 @@ The ordered validation groups are:
 
 For MARK and ROTATE, a vout 1 amount other than 20,000 is `BAD_OUTPUT_SCRIPT_OR_VALUE`; after that amount is valid, a wrong vout 1 successor script is `BAD_SUCCESSOR`. For CREATE, a wrong vout 1 carrier script is `BAD_OUTPUT_SCRIPT_OR_VALUE`. CLOSE and REFUND equality failures are fee-split failures after their output destinations and positive fee are established.
 
-An INIT whose height addition overflows is `BAD_HEIGHT_OR_PHASE`. A marked transition whose predecessor sequence is `0xffffffff`, or whose marker sequence is not predecessor plus one, is `BAD_STATE_SEQUENCE`. REFUND and noncanonical exit may terminate a carrier at sequence `0xffffffff` because neither increments it.
+An INIT whose height addition overflows is `BAD_HEIGHT_OR_PHASE`. A marked transition whose predecessor sequence is `0xffffffff`, or whose marker sequence is not predecessor plus one, is `BAD_STATE_SEQUENCE`. REFUND and nonauthoritative exit may terminate a carrier at sequence `0xffffffff` because neither increments it.
 
 ## 12. Stable reason registry and event classes
 
@@ -622,7 +622,7 @@ The exhaustive Tandem reason registry is:
 | `0x0017` | `BAD_OUTPUT_SCRIPT_OR_VALUE` | Marker value, fixed carrier value, CREATE carrier script, or a required non-successor destination script or key differs |
 | `0x0018` | `NONPOSITIVE_OR_INVALID_FEE` | Fee is zero, negative, overflowed, underflowed, or cannot be computed exactly |
 | `0x0019` | `BAD_FEE_SPLIT_OR_CHANGE` | A debit split, equal payout, sponsor change equation, or 1,000-satoshi change floor differs after fee positivity is established |
-| `0x001a` | `PREDECESSOR_NOT_ACTIVE` | The operation does not reference the active canonical predecessor required for it |
+| `0x001a` | `PREDECESSOR_NOT_ACTIVE` | The operation does not reference the active authoritative predecessor required for it |
 | `0x001b` | `BAD_STATE_SEQUENCE` | State sequence is not predecessor plus one or cannot be incremented |
 | `0x001c` | `BAD_SUCCESSOR` | MARK does not preserve the carrier script or ROTATE does not derive the proposed successor carrier script |
 | `0x001d` | `BAD_COMMITMENT` | MARK chapter commitment is all zero |
@@ -721,7 +721,7 @@ For class `INVALID_NO_STATE`:
 
 Population-only extraction never changes the selected reason or validity.
 
-### 13.5 Terminal noncanonical field population
+### 13.5 Terminal nonauthoritative field population
 
 For class `TERMINAL_NONCANONICAL`:
 
@@ -736,9 +736,9 @@ For class `TERMINAL_NONCANONICAL`:
 
 The same transaction, block, event-index, and reason fields are repeated for each per-carrier terminal event; only `sub_index` and the consumed object's state fields differ.
 
-## 14. Canonical roots
+## 14. Authoritative roots
 
-All roots use only SHA256 and the fixed-width encodings in this file. They use canonical confirmed state only. Mempool observations are never included.
+All roots use only SHA256 and the fixed-width encodings in this file. They use authoritative confirmed state only. Mempool observations are never included.
 
 ### 14.1 Event root
 
@@ -760,7 +760,7 @@ SHA256("TANDEM/EVENT-EMPTY\0" || namespace_commitment)
 
 ### 14.2 Object-state root
 
-After applying all transactions in a block, every canonical object contributes exactly one snapshot leaf:
+After applying all transactions in a block, every authoritative object contributes exactly one snapshot leaf:
 
 ```text
 SHA256("TANDEM/OBJECT-STATE\0" ||
@@ -776,7 +776,7 @@ SHA256("TANDEM/OBJECT-STATE\0" ||
   chapter_count_u32le)
 ```
 
-`founding_u8` is exactly 0 or 1. Status uses section 10. `create_height` is the canonical CREATE block height. Active objects use their active carrier as `current_outpoint36` and `zero32` as `terminal_txid_wire32`. Terminal objects use `zero36` as current outpoint, retain their last keys and sequence, and use the txid of CLOSE, REFUND, or the noncanonical carrier spend as terminal txid.
+`founding_u8` is exactly 0 or 1. Status uses section 10. `create_height` is the authoritative CREATE block height. Active objects use their active carrier as `current_outpoint36` and `zero32` as `terminal_txid_wire32`. Terminal objects use `zero36` as current outpoint, retain their last keys and sequence, and use the txid of CLOSE, REFUND, or the nonauthoritative carrier spend as terminal txid.
 
 Order object leaves by unsigned bytewise lexicographic `object_key32`. Object Merkle parents are:
 
@@ -798,7 +798,7 @@ The root immediately before the configured INIT confirmation block is:
 R_prev = SHA256("TANDEM/STATE-EMPTY\0" || namespace_commitment)
 ```
 
-For every canonical block from the configured INIT confirmation block onward, including a block with no Tandem event, compute post-block counters and:
+For every authoritative block from the configured INIT confirmation block onward, including a block with no Tandem event, compute post-block counters and:
 
 ```text
 R_h = SHA256("TANDEM/BLOCKROOT\0" ||
@@ -813,30 +813,30 @@ R_h = SHA256("TANDEM/BLOCKROOT\0" ||
              active_objects_u64le)
 ```
 
-`R_h` becomes `R_prev` for the next canonical block. Each counter is the post-block value encoded as `u64le`.
+`R_h` becomes `R_prev` for the next authoritative block. Each counter is the post-block value encoded as `u64le`.
 
 ### 14.4 Reorganization behavior
 
 Connecting a block applies transactions in transaction-index order, records events, applies state deltas atomically, computes both component roots and counters, and then computes the chained root. Disconnecting a block reverses its state mutations and roots in exact reverse order before a replacement branch is applied.
 
-A reorganization can change INIT validity, CREATE founding status, active outpoints, terminal status, counters, and every subsequent chained root. Results depend only on the configured binding, the bytes of this specification, and the canonical Bitcoin blocks. Arrival time, API order, cache contents, content availability, and any other implementation's parsed output have no role.
+A reorganization can change INIT validity, CREATE founding status, active outpoints, terminal status, counters, and every subsequent chained root. Results depend only on the configured binding, the bytes of this specification, and the authoritative Bitcoin blocks. Arrival time, API order, cache contents, content availability, and any other implementation's parsed output have no role.
 
-## 15. Canonical invariants
+## 15. Authoritative invariants
 
 A conforming implementation MUST preserve all of these invariants:
 
 1. One binary object key maps to exactly one valid CREATE outpoint and one active or terminal status.
 2. An active object has exactly one active outpoint, one sorted current key pair, carrier value 20,000, and its greatest sequence.
-3. A valid canonical outpoint is consumed at most once.
+3. A valid authoritative outpoint is consumed at most once.
 4. A state sequence starts at 0 and increments by one only on MARK, ROTATE, or CLOSE.
 5. A chapter exists only for a valid MARK and is unique by `(object_key,state_seq)`.
 6. A carrier represents one jointly controlled object and is counted once, not once per key.
-7. Founding status depends only on canonical CREATE confirmation height.
+7. Founding status depends only on authoritative CREATE confirmation height.
 8. Invalid no-state events do not mutate state or counters.
 9. A confirmed invalid active-carrier spend terminates every consumed object because its UTXO is gone.
 10. CREATE never creates more than one object, and no Tandem transaction combines, splits, or creates multiple successors for an object.
-11. `founding_created` equals the number of founding objects across ACTIVE, CLOSED, REFUNDED, and EXITED_NONCANONICAL statuses on the canonical chain.
-12. Given the same deployment binding, exact specification bytes, and canonical blocks, independent implementations produce identical events, reason codes, state, counters, event roots, object-state roots, and chained roots at every height.
+11. `founding_created` equals the number of founding objects across ACTIVE, CLOSED, REFUNDED, and EXITED_NONCANONICAL statuses on the authoritative chain.
+12. Given the same deployment binding, exact specification bytes, and authoritative blocks, independent implementations produce identical events, reason codes, state, counters, event roots, object-state roots, and chained roots at every height.
 
 ## 16. Protocol boundary
 

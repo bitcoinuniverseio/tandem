@@ -38,7 +38,7 @@ The interactive object journey is explanatory. It does not create, sign, or broa
 
 ## Public protocol contract
 
-The exact public contract is indexed in [protocol/README.md](protocol/README.md). The canonical specification bytes, schemas, release metadata, and golden vectors are retained without modification from the finalized protocol record.
+The exact public contract is indexed in [protocol/README.md](protocol/README.md). The authoritative specification bytes, schemas, release metadata, and golden vectors are retained without modification from the finalized protocol record.
 
 ## Contribute
 

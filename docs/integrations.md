@@ -8,13 +8,13 @@ Mainnet is not active. Build integrations for review and controlled testing only
 
 | Artifact | Purpose |
 |---|---|
-| [`tandem.md`](../tandem.md) | Canonical normative protocol bytes |
+| [`tandem.md`](../tandem.md) | Authoritative normative protocol bytes |
 | [`release/spec.json`](../release/spec.json) | Hash, byte count, encoding, and finalization status |
 | [`schemas/chapter.schema.json`](../schemas/chapter.schema.json) | Strict chapter manifest contract |
 | [`schemas/close.schema.json`](../schemas/close.schema.json) | Strict close manifest contract |
 | [`schemas/agreement-envelope.schema.json`](../schemas/agreement-envelope.schema.json) | Signed independent-indexer agreement contract |
 | [`vectors/create-marker.example.json`](../vectors/create-marker.example.json) | Minimal public marker input example |
-| [`vectors/generated/golden.json`](../vectors/generated/golden.json) | Canonical valid and invalid fixture corpus |
+| [`vectors/generated/golden.json`](../vectors/generated/golden.json) | Authoritative valid and invalid fixture corpus |
 | [`vectors/generated/manifest.json`](../vectors/generated/manifest.json) | Fixture digest and vector root |
 
 ## Verify before use
@@ -34,13 +34,13 @@ node scripts/verify-public.mjs
 
 ## Chapter and close content
 
-Chapter and close manifests are presentation data. Canonicalize them using RFC 8785 JCS before hashing when the application constructs a commitment. Retrieve only the exact payload named by `content_sha256` and verify the bytes before display.
+Chapter and close manifests are presentation data. Authoritativeize them using RFC 8785 JCS before hashing when the application constructs a commitment. Retrieve only the exact payload named by `content_sha256` and verify the bytes before display.
 
 Supported URI syntax is constrained by the public schemas. URI availability never changes on-chain validity.
 
 ## Agreement envelopes
 
-An agreement envelope carries a canonical tuple and an Ed25519 signature from an authorized indexer identity. A verifier should accept a height only when both independently authorized pipelines agree on the protocol ID, height, block hash, roots, and counters.
+An agreement envelope carries a authoritative tuple and an Ed25519 signature from an authorized indexer identity. A verifier should accept a height only when both independently authorized pipelines agree on the protocol ID, height, block hash, roots, and counters.
 
 Each pipeline's parser commit, indexer commit, parser binary hash, and indexer binary hash identify that pipeline's own release. Validate those provenance fields independently against the deployment trust policy. Independent implementations are expected to have different commits and binary hashes.
 

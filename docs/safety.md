@@ -22,7 +22,7 @@ A recovery path still depends on correct preparation, safe export, checksum veri
 
 Each signer should reconstruct and verify the entire intent, including inputs, outputs, amounts, scripts, fees, sequences, locktime, key order, commitments, and recovery transactions. Do not sign a transaction based only on a friendly label or a website summary.
 
-State-changing construction and broadcast should fail closed whenever independent indexers disagree at the same canonical height.
+State-changing construction and broadcast should fail closed whenever independent indexers disagree at the same authoritative height.
 
 ## External content
 
