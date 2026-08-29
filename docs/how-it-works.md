@@ -32,9 +32,9 @@ REFUND is a markerless, pre-signed recovery spend. It can become valid only afte
 
 ## Independent verification
 
-Tandem is deterministic. Given the same deployment binding, specification bytes, and canonical Bitcoin blocks, independent implementations should produce identical events, object state, counters, and roots at every height.
+Tandem is deterministic. Given the same deployment binding, specification bytes, and authoritative Bitcoin blocks, independent implementations should produce identical events, object state, counters, and roots at every height.
 
-Official state-dependent construction should fail closed when independent indexers do not agree at the same canonical height. Raw Bitcoin data and clearly labeled diagnostics may remain available during disagreement.
+Official state-dependent construction should fail closed when independent indexers do not agree at the same authoritative height. Raw Bitcoin data and clearly labeled diagnostics may remain available during disagreement.
 
 ## External content
 
