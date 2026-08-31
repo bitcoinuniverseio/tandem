@@ -18,7 +18,7 @@ The public Tandem repository is for a clear product experience, accurate user ed
 - Typographical and factual corrections
 - Use cases that do not imply investment value or guaranteed outcomes
 
-Protocol artifact changes require separate maintainer governance. Do not edit canonical bytes, release metadata, schemas, or golden vectors as part of a product copy change.
+Protocol artifact changes require separate maintainer governance. Do not edit authoritative bytes, release metadata, schemas, or golden vectors as part of a product copy change.
 
 ## Validate your change
 

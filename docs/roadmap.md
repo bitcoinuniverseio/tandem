@@ -6,7 +6,7 @@ This public roadmap describes outcomes users can verify. It does not publish int
 
 ## Finalized
 
-- Canonical normative protocol bytes
+- Authoritative normative protocol bytes
 - Public specification hash and byte contract
 - Strict public manifest and agreement schemas
 - Deterministic golden vectors
