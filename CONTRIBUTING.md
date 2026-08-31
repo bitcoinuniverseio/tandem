@@ -22,6 +22,8 @@ Protocol artifact changes require separate maintainer governance. Do not edit ca
 
 ## Validate your change
 
+Use Node.js 24.18.1 for every local and CI verification run.
+
 Run:
 
 ```text
