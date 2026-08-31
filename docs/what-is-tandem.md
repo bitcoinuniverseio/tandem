@@ -18,7 +18,7 @@ Cooperation is not an account setting. The Bitcoin output itself requires the cu
 
 ### The history follows exact rules
 
-Every recognized action has a precise transaction shape. Independent implementations can process the same canonical Bitcoin blocks and reach the same Tandem state.
+Every recognized action has a precise transaction shape. Independent implementations can process the same authoritative Bitcoin blocks and reach the same Tandem state.
 
 ### Recovery is prepared before progress
 

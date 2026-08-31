@@ -7,7 +7,7 @@ This repository is the public product surface for Tandem. Its purpose is to help
 - The static public product experience in `index.html` and `assets/`
 - Public user, safety, use-case, roadmap, and integration guides in `docs/`
 - Repository governance and public security reporting documents
-- The canonical public specification at `tandem.md`
+- The authoritative public specification at `tandem.md`
 - Public release metadata at `release/spec.json`
 - Deliberate public contracts in `schemas/`
 - The approved public example and golden artifacts in `vectors/`

@@ -15,8 +15,8 @@ Describe the public user or contributor outcome this change improves.
 
 ## Contract impact
 
-- [ ] No canonical public contract artifact changed.
-- [ ] A canonical artifact changed and the required protocol governance is documented separately.
+- [ ] No authoritative public contract artifact changed.
+- [ ] A authoritative artifact changed and the required protocol governance is documented separately.
 
 ## Validation
 

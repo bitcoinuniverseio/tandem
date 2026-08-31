@@ -1,8 +1,8 @@
 # Public protocol contract
 
-This directory is an index. The canonical files stay at their fixed repository paths so their bytes and links remain stable.
+This directory is an index. The authoritative files stay at their fixed repository paths so their bytes and links remain stable.
 
-## Canonical artifact
+## Authoritative artifact
 
 - [Normative specification](../tandem.md)
 - [Specification release record](../release/spec.json)
@@ -23,7 +23,7 @@ These schemas use JSON Schema Draft 2020-12 and reject unknown top-level propert
 - [Golden fixture corpus](../vectors/generated/golden.json)
 - [Golden vector manifest](../vectors/generated/manifest.json)
 
-The vector manifest binds the canonical specification hash, fixture digest, and vector root.
+The vector manifest binds the authoritative specification hash, fixture digest, and vector root.
 
 ## Verify locally
 

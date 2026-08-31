@@ -38,7 +38,7 @@ Independent implementations reduce the risk of one parser or service silently pr
 
 ## Where is the exact specification?
 
-The canonical bytes are in [`tandem.md`](../tandem.md), with hash and byte metadata in [`release/spec.json`](../release/spec.json). Start with [the protocol artifact guide](../protocol/README.md).
+The authoritative bytes are in [`tandem.md`](../tandem.md), with hash and byte metadata in [`release/spec.json`](../release/spec.json). Start with [the protocol artifact guide](../protocol/README.md).
 
 ## Can I build an integration now?
 
