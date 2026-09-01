@@ -1,0 +1,1297 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="The Tandem normative specification as numbered rules: record format, pairing rules, state transitions, and every validity and invalidity condition."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem normative specification">
+    <meta property="og:description" content="Numbered rules for the Tandem record format, pairing requirements, state machine, and rejection precedence.">
+    <title>Tandem normative specification</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the specification</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="guide.html">Guide</a>
+        <a href="pair-check.html">Pair check</a>
+        <a href="vectors.html">Vectors</a>
+      </nav>
+      <a class="header-link" href="../tandem.md">Raw bytes</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Normative specification</p>
+      <h1>Every rule, numbered,<br><em>and traced to the frozen bytes.</em></h1>
+      <p class="dossier-lede">
+        This page restates the Tandem protocol as numbered, individually citable rules. It is a
+        navigation layer, not a replacement. The authoritative artifact is
+        <a href="../tandem.md">tandem.md</a>, and every rule below names the section of that file
+        it comes from. Where this page and the raw bytes ever differ, the raw bytes win.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Specification sections">
+          <p>On this page</p>
+          <a href="#binding">1. Identity and binding</a>
+          <a href="#format">2. Record format</a>
+          <a href="#pairing">3. Pairing rules</a>
+          <a href="#operations">4. Operation validity</a>
+          <a href="#state">5. State transitions</a>
+          <a href="#invalid">6. Invalidity and precedence</a>
+          <a href="#roots">7. Authoritative roots</a>
+          <a href="#errata">8. Errata</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="conventions" aria-labelledby="conventions-title">
+          <p class="kicker">How to read this page</p>
+          <h2 id="conventions-title">Conventions</h2>
+          <p>
+            MUST, MUST NOT, REQUIRED, SHALL, SHALL NOT, SHOULD, SHOULD NOT, and MAY carry their
+            conformance meaning. All integers are unsigned and little-endian unless a rule says
+            otherwise. Arithmetic is exact integer arithmetic with bounds checks and MUST NOT wrap.
+            A value is invalid if it does not fit its field, or if an intermediate needed for
+            validation cannot be computed exactly.
+          </p>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Notation used throughout, from tandem.md section 2</caption>
+              <thead><tr><th>Notation</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>u8</code>, <code>u16le</code>, <code>u32le</code>, <code>u64le</code></td><td>Unsigned little-endian integers of 1, 2, 4, and 8 bytes</td></tr>
+                <tr><td><code>SHA256(x)</code></td><td>The 32 raw output bytes of SHA256 over byte string <code>x</code></td></tr>
+                <tr><td><code>HASH160(x)</code></td><td><code>RIPEMD160(SHA256(x))</code>, as 20 raw bytes</td></tr>
+                <tr><td><code>a || b</code></td><td>Byte concatenation</td></tr>
+                <tr><td><code>zeroN</code></td><td>Exactly <code>N</code> zero bytes</td></tr>
+                <tr><td><code>txid_wire32</code></td><td>A transaction hash in Bitcoin wire serialization order</td></tr>
+                <tr><td><code>outpoint36</code></td><td><code>txid_wire32 || vout_u32le</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="note">
+            <strong>Two hash orders, one rule.</strong>
+            <p>
+              Displayed transaction and block hashes use the lowercase 64-character hexadecimal
+              order shown by Bitcoin Core. Converting a displayed hash to a wire hash reverses the
+              32 bytes exactly once. A raw SHA256 digest such as <code>spec_hash</code>, a namespace
+              commitment, an object key, or a content commitment is never byte-reversed.
+            </p>
+          </div>
+          <p>
+            Absent fixed-width values are all zero bytes, with two exceptions: an absent
+            <code>state_seq</code> and an event with no marker both use <code>0xffffffff</code>. In
+            particular an absent outpoint is <code>zero36</code>, not a null txid followed by
+            <code>0xffffffff</code>.
+          </p>
+        </section>
+
+        <section id="binding" aria-labelledby="binding-title">
+          <p class="kicker">Rules ID-1 to ID-6</p>
+          <h2 id="binding-title">1. Identity and binding</h2>
+          <p class="lede">
+            Tandem has no global registry. A deployment is pinned to exactly one network, one INIT
+            transaction, and one specification digest. Change any of the three and you are looking
+            at a different protocol, not a different version of this one.
+          </p>
+
+          <div class="rule">
+            <span class="rule-id">ID-1</span>
+            <p>
+              A deployment binding consists of exactly one Bitcoin network code, one configured
+              INIT txid on that network, and the SHA256 digest of the raw bytes of the
+              specification file. The binding is immutable for one protocol identifier.
+              <span class="rule-src">tandem.md section 3</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ID-2</span>
+            <p>
+              An implementation MUST NOT select an INIT by first-seen order, lowest txid, block
+              order, or marker discovery. An alternate INIT txid defines an alternate protocol
+              identifier even when its payload fields are identical.
+              <span class="rule-src">tandem.md section 3</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ID-3</span>
+            <p>The network codes are fixed.<span class="rule-src">tandem.md section 3</span></p>
+            <div class="scroll-x">
+              <table class="tbl">
+                <thead><tr><th>Code</th><th>Label</th></tr></thead>
+                <tbody>
+                  <tr><td><code>0x00</code></td><td><code>mainnet</code></td></tr>
+                  <tr><td><code>0x01</code></td><td><code>signet</code></td></tr>
+                  <tr><td><code>0x02</code></td><td><code>testnet4</code></td></tr>
+                  <tr><td><code>0x03</code></td><td><code>regtest</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ID-4</span>
+            <p>
+              The protocol identifier and the object display identifier are exactly:
+              <span class="rule-src">tandem.md section 3</span>
+            </p>
+            <div class="code">
+              <pre><code>tndm:&lt;network_label&gt;:&lt;configured_init_txid_display&gt;
+
+tandem:&lt;network_label&gt;:&lt;configured_init_txid_display&gt;:&lt;create_txid_display&gt;:1</code></pre>
+            </div>
+            <p>The trailing <code>1</code> is decimal vout 1, the carrier output.</p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ID-5</span>
+            <p>
+              The namespace commitment binds network, INIT, and specification bytes into one
+              32-byte value. It can be derived before INIT validation, but only a valid confirmed
+              configured INIT activates state under it.
+              <span class="rule-src">tandem.md section 3</span>
+            </p>
+            <div class="code">
+              <span class="code-label">Namespace commitment</span>
+              <pre><code>namespace_commitment = SHA256(
+  "TANDEM/NAMESPACE\0" ||   <span aria-hidden="true">// 17 bytes</span>
+  network_u8 ||             <span aria-hidden="true">// 1 byte</span>
+  configured_init_txid_wire32 ||
+  spec_hash32
+)</code></pre>
+            </div>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ID-6</span>
+            <p>
+              For a valid CREATE at vout 1, the binary object key is derived once and never
+              changes. Binary object keys, not display identifiers, are used for equality,
+              ordering, database keys, event roots, and object-state roots.
+              <span class="rule-src">tandem.md section 3</span>
+            </p>
+            <div class="code">
+              <span class="code-label">Object key</span>
+              <pre><code>object_key = SHA256(
+  "TANDEM/OBJECT\0" ||      <span aria-hidden="true">// 14 bytes</span>
+  namespace_commitment ||
+  create_txid_wire32 ||
+  uint32_le(1)
+)</code></pre>
+            </div>
+          </div>
+
+          <div class="note">
+            <strong>Both derivations are checkable right now.</strong>
+            <p>
+              The published golden corpus fixes a regtest binding and states the resulting
+              namespace and object key. The
+              <a href="pair-check.html#derive">pair check tool</a> recomputes both from the raw
+              inputs in your browser, and <a href="vectors.html#identity">the vectors page</a>
+              lists the exact values.
+            </p>
+          </div>
+        </section>
+
+        <section id="format" aria-labelledby="format-title">
+          <p class="kicker">Rules REC-1 to REC-9</p>
+          <h2 id="format-title">2. Record format</h2>
+          <p class="lede">
+            A Tandem record is an OP_RETURN marker output plus the exact transaction shape around
+            it. The marker alone is never sufficient, and a malformed marker is deliberately still
+            detectable so that it cannot hide.
+          </p>
+
+          <h3>2.1 Marker candidate detection</h3>
+
+          <div class="rule">
+            <span class="rule-id">REC-1</span>
+            <p>
+              An output is a Tandem marker candidate when all of the following can be established
+              from its script bytes: the first opcode is <code>OP_RETURN</code>
+              (<code>0x6a</code>); the next opcode is a direct data push from <code>0x01</code>
+              through <code>0x4b</code> or one of <code>OP_PUSHDATA1</code>,
+              <code>OP_PUSHDATA2</code>, <code>OP_PUSHDATA4</code>; the declared pushed data is at
+              least four bytes; at least the first four declared data bytes are physically present;
+              and those four bytes are <code>54 4e 44 4d</code>, ASCII <code>TNDM</code>.
+              <span class="rule-src">tandem.md section 6.1</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">REC-2</span>
+            <p>
+              Candidate status deliberately does not require a minimal push, a complete declared
+              payload, a known marker format, a known opcode, an exact operation length, zero
+              output value, or the absence of trailing script bytes. Those are validation
+              conditions. The broad candidate rule makes malformed markers deterministic and stops
+              a second malformed marker from evading <code>MULTIPLE_MARKERS</code>.
+              <span class="rule-src">tandem.md section 6.1</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">REC-3</span>
+            <p>
+              If byte offset 6 of a candidate payload is present and equals <code>0x00</code>, the
+              candidate is an INIT candidate. An INIT candidate in any transaction other than the
+              configured INIT txid is foreign to this protocol identifier and is removed before
+              marker counting. It emits no event by itself. If that transaction also spends an
+              active carrier, processing continues as though the foreign candidate were absent.
+              <span class="rule-src">tandem.md section 6.1</span>
+            </p>
+          </div>
+
+          <h3>2.2 Valid marker script</h3>
+
+          <div class="rule">
+            <span class="rule-id">REC-4</span>
+            <p>
+              A valid marker output has value zero, and its script contains exactly
+              <code>OP_RETURN</code>, one minimal data push, and one exact payload, with no
+              trailing opcode or byte. Every valid operation has exactly one marker candidate, at
+              vout 0, and no other OP_RETURN output.
+              <span class="rule-src">tandem.md sections 6.2</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">REC-5</span>
+            <p>These are the only valid encodings.<span class="rule-src">tandem.md section 6.2</span></p>
+            <div class="scroll-x">
+              <table class="tbl">
+                <caption>Exact script encodings. Every value below is reproduced by the published golden markers.</caption>
+                <thead><tr><th>Operation</th><th>Payload bytes</th><th>Script prefix</th><th>Script bytes</th></tr></thead>
+                <tbody>
+                  <tr><td>INIT</td><td>59</td><td><code>6a 3b</code></td><td>61</td></tr>
+                  <tr><td>CREATE</td><td>40</td><td><code>6a 28</code></td><td>42</td></tr>
+                  <tr><td>MARK</td><td>78</td><td><code>6a 4c 4e</code></td><td>81</td></tr>
+                  <tr><td>ROTATE</td><td>44</td><td><code>6a 2c</code></td><td>46</td></tr>
+                  <tr><td>CLOSE</td><td>80</td><td><code>6a 4c 50</code></td><td>83</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">REC-6</span>
+            <p>
+              For a structurally readable candidate the parser first enforces, in order: a complete
+              push-length prefix; no payload shorter than seven bytes or longer than 80 bytes;
+              declared push length equal to the physically present payload length; no bytes after
+              the pushed payload; minimal push encoding; and, if opcode byte 6 is defined, the
+              exact payload length for that opcode regardless of the marker-format byte. Failure of
+              any item is <code>BAD_MARKER_ENCODING_OR_LENGTH</code>. A structurally valid payload
+              with an undefined opcode may be any length from 7 through 80 and reaches
+              marker-format and opcode validation.
+              <span class="rule-src">tandem.md section 6.2</span>
+            </p>
+          </div>
+
+          <h3>2.3 Payload grammar</h3>
+
+          <div class="rule">
+            <span class="rule-id">REC-7</span>
+            <p>
+              All five payloads share the same first seven bytes: magic <code>TNDM</code>, marker
+              format <code>0x01</code>, the bound network code, and the opcode.
+              <span class="rule-src">tandem.md section 7</span>
+            </p>
+            <div class="scroll-x">
+              <table class="tbl">
+                <caption>Common header, byte ranges are [start, end)</caption>
+                <thead><tr><th>Range</th><th>Size</th><th>Field</th><th>Required value</th></tr></thead>
+                <tbody>
+                  <tr><td><code>[0,4)</code></td><td>4</td><td>magic</td><td><code>TNDM</code>, hex <code>54 4e 44 4d</code></td></tr>
+                  <tr><td><code>[4,5)</code></td><td>1</td><td>marker format</td><td><code>0x01</code></td></tr>
+                  <tr><td><code>[5,6)</code></td><td>1</td><td>network</td><td>bound network code</td></tr>
+                  <tr><td><code>[6,7)</code></td><td>1</td><td>opcode</td><td><code>0x00</code> to <code>0x04</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">REC-8</span>
+            <p>The remaining payload fields are exact.<span class="rule-src">tandem.md sections 7.1 to 7.5</span></p>
+            <div class="scroll-x">
+              <table class="tbl">
+                <caption>Operation-specific payload fields after the common seven-byte header</caption>
+                <thead><tr><th>Operation</th><th>Range</th><th>Size</th><th>Field</th><th>Required value</th></tr></thead>
+                <tbody>
+                  <tr><td rowspan="5">INIT</td><td><code>[7,11)</code></td><td>4</td><td><code>H_open</code></td><td>validated by OP-1</td></tr>
+                  <tr><td><code>[11,15)</code></td><td>4</td><td><code>H_close</code></td><td><code>H_open + 4320</code></td></tr>
+                  <tr><td><code>[15,23)</code></td><td>8</td><td><code>carrier_value</code></td><td>20,000</td></tr>
+                  <tr><td><code>[23,27)</code></td><td>4</td><td><code>refund_delay</code></td><td>52,560</td></tr>
+                  <tr><td><code>[27,59)</code></td><td>32</td><td><code>spec_hash</code></td><td>SHA256 of the exact specification bytes</td></tr>
+
+                  <tr><td rowspan="2">CREATE</td><td><code>[7,8)</code></td><td>1</td><td><code>state_vout</code></td><td><code>0x01</code></td></tr>
+                  <tr><td><code>[8,40)</code></td><td>32</td><td>namespace</td><td>configured namespace commitment</td></tr>
+
+                  <tr><td rowspan="5">MARK</td><td><code>[7,8)</code></td><td>1</td><td><code>state_vout</code></td><td><code>0x01</code></td></tr>
+                  <tr><td><code>[8,40)</code></td><td>32</td><td>namespace</td><td>configured namespace commitment</td></tr>
+                  <tr><td><code>[40,44)</code></td><td>4</td><td><code>state_seq</code></td><td>predecessor sequence plus one</td></tr>
+                  <tr><td><code>[44,46)</code></td><td>1 + 1</td><td>kind, flags</td><td>a defined kind; flags <code>0x00</code></td></tr>
+                  <tr><td><code>[46,78)</code></td><td>32</td><td>chapter commitment</td><td>any nonzero 32-byte value</td></tr>
+
+                  <tr><td rowspan="3">ROTATE</td><td><code>[7,8)</code></td><td>1</td><td><code>state_vout</code></td><td><code>0x01</code></td></tr>
+                  <tr><td><code>[8,40)</code></td><td>32</td><td>namespace</td><td>configured namespace commitment</td></tr>
+                  <tr><td><code>[40,44)</code></td><td>4</td><td><code>state_seq</code></td><td>predecessor sequence plus one</td></tr>
+
+                  <tr><td rowspan="5">CLOSE</td><td><code>[7,8)</code></td><td>1</td><td><code>state_vout</code></td><td><code>0xff</code></td></tr>
+                  <tr><td><code>[8,40)</code></td><td>32</td><td>namespace</td><td>configured namespace commitment</td></tr>
+                  <tr><td><code>[40,44)</code></td><td>4</td><td><code>state_seq</code></td><td>predecessor sequence plus one</td></tr>
+                  <tr><td><code>[44,48)</code></td><td>1 + 3</td><td>reason, reserved</td><td>a defined reason; reserved <code>00 00 00</code></td></tr>
+                  <tr><td><code>[48,80)</code></td><td>32</td><td>close commitment</td><td>any 32-byte value, including zero</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              REFUND has no marker and no payload. CREATE and ROTATE never duplicate keys in the
+              payload: the keys are the ones revealed by their inputs.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">REC-9</span>
+            <p>The MARK kinds and CLOSE reasons are closed sets.<span class="rule-src">tandem.md section 4</span></p>
+            <div class="pair-band">
+              <div>
+                <h4><span class="side-tag a">MARK</span> kinds</h4>
+                <ul>
+                  <li><code>0x00</code> note</li>
+                  <li><code>0x01</code> image</li>
+                  <li><code>0x02</code> audio</li>
+                  <li><code>0x03</code> milestone</li>
+                  <li><code>0x04</code> link</li>
+                  <li><code>0x05</code> opaque data</li>
+                </ul>
+              </div>
+              <div>
+                <h4><span class="side-tag b">CLOSE</span> reasons</h4>
+                <ul>
+                  <li><code>0x00</code> mutual completion</li>
+                  <li><code>0x01</code> relationship ended</li>
+                  <li><code>0x02</code> migrate outside Tandem</li>
+                  <li><code>0x03</code> other</li>
+                </ul>
+              </div>
+            </div>
+            <p>
+              No other opcode, kind, reason, flag, marker format, network byte, state vout value,
+              or reserved value is defined in Tandem.
+            </p>
+          </div>
+        </section>
+
+        <section id="pairing" aria-labelledby="pairing-title">
+          <p class="kicker">Rules PAIR-1 to PAIR-7</p>
+          <h2 id="pairing-title">3. Pairing rules</h2>
+          <p class="lede">
+            This is the section that makes Tandem what it is. Every rule here describes a
+            requirement that one half cannot satisfy alone.
+          </p>
+
+          <h3>3.1 The key pair</h3>
+
+          <div class="rule">
+            <span class="rule-id">PAIR-1</span>
+            <p>
+              The two carrier keys MUST be valid, distinct, compressed secp256k1 points, each
+              exactly 33 bytes beginning with <code>0x02</code> or <code>0x03</code>, sorted by
+              unsigned bytewise lexicographic order so that <code>key0 &lt; key1</code>. Side A is
+              always <code>key0</code>. Side B is always <code>key1</code>.
+              <span class="rule-src">tandem.md section 5.2</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">PAIR-2</span>
+            <p>
+              The witness script is exactly this, and exactly 71 bytes. Its native P2WSH
+              scriptPubKey is <code>OP_0 PUSH32 SHA256(witnessScript)</code>, 34 bytes serialized.
+              <span class="rule-src">tandem.md section 5.2</span>
+            </p>
+            <div class="code">
+              <span class="code-label">Carrier witness script</span>
+              <pre><code>OP_2 PUSH33 key0 PUSH33 key1 OP_2 OP_CHECKMULTISIG
+
+52 21 &lt;key0_33&gt; 21 &lt;key1_33&gt; 52 ae</code></pre>
+            </div>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">PAIR-3</span>
+            <p>
+              A carrier input has an empty scriptSig and exactly four witness elements, in this
+              order. The first element MUST be empty. The first signature MUST verify for key0 and
+              the second for key1.
+              <span class="rule-src">tandem.md section 5.2</span>
+            </p>
+            <div class="code">
+              <span class="code-label">Carrier witness stack</span>
+              <pre><code>&lt;empty&gt; &lt;signature_for_key0_plus_01&gt; &lt;signature_for_key1_plus_01&gt; &lt;witnessScript&gt;</code></pre>
+            </div>
+            <p>
+              Both signatures MUST be strict DER and low-S excluding the final sighash byte, MUST
+              end in <code>0x01</code> for <code>SIGHASH_ALL</code>, and MUST verify under SegWit
+              v0 signature hashing using the exact prevout amount.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">PAIR-4</span>
+            <p>
+              A required native P2WPKH input has an empty scriptSig and exactly two witness
+              elements, <code>&lt;DER_signature_plus_01&gt; &lt;compressed_public_key&gt;</code>.
+              The key's HASH160 MUST equal the witness program in the spent prevout.
+              <span class="rule-src">tandem.md section 5.1</span>
+            </p>
+          </div>
+
+          <h3>3.2 Pairing across time</h3>
+
+          <div class="rule">
+            <span class="rule-id">PAIR-5</span>
+            <p>
+              MARK, ROTATE, and CLOSE MUST carry a marker <code>state_seq</code> exactly equal to
+              the consumed predecessor's sequence plus one. A predecessor sequence of
+              <code>0xffffffff</code> cannot be incremented and fails. REFUND and a terminal EXITED_NONCANONICAL event
+              do not increment, so either may terminate a carrier that is already at
+              <code>0xffffffff</code>.
+              <span class="rule-src">tandem.md sections 9.3, 9.4, 9.5, 11.3</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">PAIR-6</span>
+            <p>
+              A MARK MUST reproduce the predecessor carrier scriptPubKey byte for byte at vout 1.
+              A ROTATE MUST place at vout 1 the exact carrier P2WSH derived from the successor pair.
+              A ROTATE successor pair MUST differ from the old pair in at least one key, and MUST
+              itself satisfy PAIR-1.
+              <span class="rule-src">tandem.md sections 9.3, 9.4</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">PAIR-7</span>
+            <p>
+              CLOSE and REFUND MUST pay key0 and key1 at native P2WPKH outputs whose values are
+              exactly equal and strictly positive. Neither side can end the object on better terms
+              than the other.
+              <span class="rule-src">tandem.md sections 9.5, 9.6</span>
+            </p>
+          </div>
+
+          <h3>3.3 Fee symmetry</h3>
+          <p>
+            Fees are split between the two sides by rule rather than by negotiation, using an exact
+            ceiling and floor so that an odd fee is still deterministic.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Exact fee arithmetic per operation, from tandem.md sections 9.2 to 9.6</caption>
+              <thead><tr><th>Operation</th><th>Definitions</th><th>Required equalities</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>CREATE</td>
+                  <td><code>D0 = input0 - output2</code>, <code>D1 = input1 - output3</code>, <code>F = D0 + D1 - 20000</code></td>
+                  <td><code>F &gt; 0</code>, <code>D0 = 10000 + ceil(F/2)</code>, <code>D1 = 10000 + floor(F/2)</code></td>
+                </tr>
+                <tr>
+                  <td>MARK</td>
+                  <td><code>F = sponsor_input - output2</code></td>
+                  <td><code>F &gt; 0</code>. Carrier value is unchanged, so no carrier value pays the fee.</td>
+                </tr>
+                <tr>
+                  <td>ROTATE</td>
+                  <td><code>D0 = input1 - output2</code>, <code>D1 = input2 - output3</code>, <code>F = D0 + D1</code></td>
+                  <td><code>F &gt; 0</code>, <code>D0 = ceil(F/2)</code>, <code>D1 = floor(F/2)</code></td>
+                </tr>
+                <tr>
+                  <td>CLOSE</td>
+                  <td><code>F = 20000 - output1 - output2</code></td>
+                  <td><code>F &gt; 0</code>, <code>output1 = output2</code>, both strictly positive</td>
+                </tr>
+                <tr>
+                  <td>REFUND</td>
+                  <td><code>F = 20000 - output0 - output1</code></td>
+                  <td><code>F &gt; 0</code>, <code>output0 = output1</code>, both strictly positive</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="note">
+            <strong>The asymmetry is one satoshi, and it always favours side A.</strong>
+            <p>
+              For an odd fee, <code>ceil(F/2)</code> exceeds <code>floor(F/2)</code> by one. Side A
+              pays that satoshi on CREATE and ROTATE. This is a deliberate tie-break so that two
+              independent implementations never disagree about which side rounds up.
+            </p>
+          </div>
+        </section>
+
+        <section id="operations" aria-labelledby="operations-title">
+          <p class="kicker">Rules OP-1 to OP-6</p>
+          <h2 id="operations-title">4. Operation validity</h2>
+          <p class="lede">
+            Each operation has an exact transaction template. Every count below is exact: not
+            minimum, not typical. There is no extra data, payment, marker, input, or output.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Shared template requirements. All operations use version 2, locktime 0.</caption>
+              <thead><tr><th>Operation</th><th>Inputs</th><th>Outputs</th><th>Input sequences</th><th>Vout 1</th></tr></thead>
+              <tbody>
+                <tr><td>INIT</td><td>1</td><td>2</td><td><code>0xffffffff</code></td><td>P2WPKH to the vin 0 key, at least 1,000 sats</td></tr>
+                <tr><td>CREATE</td><td>2</td><td>4</td><td><code>0xfffffffd</code></td><td>20,000 sats to the carrier P2WSH</td></tr>
+                <tr><td>MARK</td><td>2</td><td>3</td><td><code>0xfffffffd</code></td><td>20,000 sats to the identical predecessor carrier script</td></tr>
+                <tr><td>ROTATE</td><td>3</td><td>4</td><td><code>0xfffffffd</code></td><td>20,000 sats to the successor carrier P2WSH</td></tr>
+                <tr><td>CLOSE</td><td>1</td><td>3</td><td><code>0xfffffffd</code></td><td>P2WPKH to current key0</td></tr>
+                <tr><td>REFUND</td><td>1</td><td>2</td><td><code>0x0000cd50</code> (52,560)</td><td>P2WPKH to current key1 at vout 1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">OP-1</span>
+            <h4>INIT</h4>
+            <p>
+              The configured INIT is valid only when its txid is the externally configured INIT
+              txid and it is confirmed on the bound network; version 2, locktime 0; exactly one
+              input and two outputs; vin 0 sequence <code>0xffffffff</code>; vin 0 spends a native
+              P2WPKH prevout confirmed in an earlier block, reveals its bound compressed key, and
+              carries a valid <code>SIGHASH_ALL</code> signature; vout 0 is the exact zero-value
+              INIT marker; vout 1 is native P2WPKH to the vin 0 key and at least 1,000 satoshis;
+              the input value minus vout 1 is the complete fee and is positive; the marker network
+              is the bound network; <code>carrier_value</code> is 20,000 and
+              <code>refund_delay</code> is 52,560; <code>spec_hash</code> is SHA256 of the exact
+              specification bytes; <code>H_open + 4320</code> fits <code>u32</code> and equals
+              <code>H_close</code>; and <code>INIT_confirmation_height + 1008</code> is computed
+              without overflow and is at most <code>H_open</code>.
+              <span class="rule-src">tandem.md section 9.1</span>
+            </p>
+            <p>
+              There is no in-place replacement. If the configured INIT is absent, orphaned,
+              conflicted away, or invalid, this protocol identifier is not activated.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">OP-2</span>
+            <h4>CREATE</h4>
+            <p>
+              A CREATE is valid only when the configured INIT is valid and on the active chain; version 2,
+              locktime 0; exactly two inputs and four outputs; both input sequences
+              <code>0xfffffffd</code>; each input spends a native P2WPKH prevout confirmed in an
+              earlier block; the key revealed by vin 0 is key0 and by vin 1 is key1, satisfying
+              PAIR-1; vout 0 is the exact zero-value CREATE marker; vout 1 is exactly 20,000
+              satoshis to the exact carrier P2WSH; vout 2 is native P2WPKH to key0 and vout 3 to
+              key1, each at least 1,000 satoshis; there is no extra data, payment, marker, input,
+              or output; the fee arithmetic in section 3.3 holds; and the CREATE confirmation
+              height is at or above <code>H_open</code>.
+              <span class="rule-src">tandem.md section 9.2</span>
+            </p>
+            <p>
+              A valid CREATE at height <code>h</code> creates sequence 0. It is founding exactly
+              when <code>H_open &lt;= h &lt; H_close</code>. A valid CREATE at or after
+              <code>H_close</code> creates an ordinary, nonfounding object. A CREATE before
+              <code>H_open</code> is invalid.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">OP-3</span>
+            <h4>MARK</h4>
+            <p>
+              Version 2, locktime 0; exactly two inputs and three outputs, both sequences
+              <code>0xfffffffd</code>; vin 0 spends the one active predecessor carrier, confirmed
+              in an earlier block, satisfying PAIR-3 with the current key pair; vin 1 spends one
+              native P2WPKH fee-sponsor prevout confirmed in an earlier block, whose key equals
+              current key0 or current key1; vout 0 is the exact zero-value MARK marker; the marker
+              <code>state_seq</code> satisfies PAIR-5; the kind is defined, flags is zero, and the
+              chapter commitment is not all zero; vout 1 is exactly 20,000 satoshis to a P2WSH
+              script identical byte for byte to the predecessor carrier scriptPubKey; vout 2 is
+              native P2WPKH to the sponsor key and at least 1,000 satoshis; and the sponsor fee is
+              positive.
+              <span class="rule-src">tandem.md section 9.3</span>
+            </p>
+            <p>
+              A valid MARK appends exactly one chapter, increments sequence by one, retains the
+              current keys, and makes <code>(txid,1)</code> the active carrier.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">OP-4</span>
+            <h4>ROTATE</h4>
+            <p>
+              Version 2, locktime 0; exactly three inputs and four outputs, all sequences
+              <code>0xfffffffd</code>; vin 0 spends the one active predecessor carrier, confirmed
+              in an earlier block, satisfying PAIR-3 with the old pair; vin 1 and vin 2 each spend
+              a native P2WPKH prevout confirmed in an earlier block, revealing successor key0 and
+              successor key1 respectively, satisfying PAIR-1 and PAIR-6; vout 0 is the exact
+              zero-value ROTATE marker; <code>state_seq</code> satisfies PAIR-5; vout 1 is exactly
+              20,000 satoshis to the exact successor carrier P2WSH; vout 2 and vout 3 are native
+              P2WPKH to successor key0 and successor key1, each at least 1,000 satoshis; and the
+              fee arithmetic in section 3.3 holds.
+              <span class="rule-src">tandem.md section 9.4</span>
+            </p>
+            <p>
+              A valid ROTATE increments sequence by one, replaces the current keys with the
+              successor keys, preserves chapter count, and makes <code>(txid,1)</code> the active
+              carrier.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">OP-5</span>
+            <h4>CLOSE</h4>
+            <p>
+              Version 2, locktime 0; exactly one input and three outputs; vin 0 sequence
+              <code>0xfffffffd</code>; vin 0 spends the one active predecessor carrier, confirmed
+              in an earlier block, satisfying PAIR-3 with the current pair; vout 0 is the exact
+              zero-value CLOSE marker; <code>state_seq</code> satisfies PAIR-5; the reason is
+              defined and all three reserved bytes are zero; vout 1 is native P2WPKH to current
+              key0 and vout 2 to current key1, with exactly equal, strictly positive values; and
+              the remaining fee is positive.
+              <span class="rule-src">tandem.md section 9.5</span>
+            </p>
+            <p>
+              A valid CLOSE increments sequence by one, creates no successor, retains the last
+              current keys, and terminates the object with status <code>CLOSED</code>.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">OP-6</span>
+            <h4>REFUND</h4>
+            <p>
+              REFUND is recognized only through the markerless dispatch branch. Version 2, locktime
+              0; exactly one input and two outputs; no OP_RETURN output; vin 0 spends the one
+              active carrier and satisfies PAIR-3 with the current pair; vin 0 sequence is exactly
+              decimal 52,560, numeric value <code>0x0000cd50</code>, serialized
+              <code>50 cd 00 00</code>, with the BIP68 disable and type flags clear; vout 0 is
+              native P2WPKH to current key0 and vout 1 to current key1, with exactly equal,
+              strictly positive values; the remaining fee is positive; and Bitcoin consensus
+              relative-locktime rules consider the input mature in the containing block.
+              <span class="rule-src">tandem.md section 9.6</span>
+            </p>
+            <p>
+              The relative delay starts at the confirmation height of the exact carrier being
+              spent. Every confirmed MARK or ROTATE replaces the carrier and restarts the delay. A
+              valid REFUND does not increment <code>state_seq</code>; it records the current
+              sequence, creates no successor, retains the current keys, and terminates the object
+              with status <code>REFUNDED</code>. Every REFUND validation failure collapses to the
+              single stable reason <code>BAD_REFUND_SHAPE_OR_MATURITY</code>.
+            </p>
+          </div>
+
+          <div class="note warn">
+            <strong>Confirmation provenance applies to every required input.</strong>
+            <p>
+              Every predecessor carrier and every noncarrier funding input required by a valid
+              operation MUST have been confirmed in a block strictly earlier than the block
+              containing the operation. A prevout created earlier in the same block fails this
+              rule. Mempool presence, first-seen time, and transaction arrival order never
+              establish confirmation provenance.
+              <span class="rule-src">tandem.md section 5.3</span>
+            </p>
+          </div>
+        </section>
+
+        <section id="state" aria-labelledby="state-title">
+          <p class="kicker">Rules ST-1 to ST-8</p>
+          <h2 id="state-title">5. State transitions</h2>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Object statuses</caption>
+              <thead><tr><th>Value</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td><code>0x00</code></td><td><code>ACTIVE</code></td></tr>
+                <tr><td><code>0x01</code></td><td><code>CLOSED</code></td></tr>
+                <tr><td><code>0x02</code></td><td><code>REFUNDED</code></td></tr>
+                <tr><td><code>0x03</code></td><td><code>EXITED_NONCANONICAL</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ST-1</span>
+            <p>The complete set of transitions is exactly this. There are no others.<span class="rule-src">tandem.md section 10</span></p>
+            <div class="code">
+              <pre><code>no object --valid CREATE--&gt; ACTIVE sequence 0
+ACTIVE    --valid MARK----&gt; ACTIVE sequence + 1, chapter_count + 1
+ACTIVE    --valid ROTATE--&gt; ACTIVE sequence + 1, successor keys
+ACTIVE    --valid CLOSE---&gt; CLOSED sequence + 1
+ACTIVE    --valid REFUND--&gt; REFUNDED, sequence unchanged
+ACTIVE    --any other confirmed carrier spend--&gt; EXITED_NONCANONICAL, sequence unchanged</code></pre>
+            </div>
+          </div>
+
+          <figure class="diagram">
+            <svg viewBox="0 0 760 260" role="img" aria-labelledby="st-title st-desc">
+              <title id="st-title">Tandem object state machine</title>
+              <desc id="st-desc">
+                A valid CREATE produces an ACTIVE object at sequence 0. MARK and ROTATE loop back to
+                ACTIVE with the sequence incremented. CLOSE leads to CLOSED, REFUND to REFUNDED,
+                and any other confirmed carrier spend to EXITED NONCANONICAL. All three terminal
+                states have no successor operation.
+              </desc>
+              <g font-family="Inter, ui-sans-serif, sans-serif" font-size="12.5">
+                <rect x="16" y="102" width="128" height="52" fill="var(--paper-bright)" stroke="#10120f" stroke-width="2" stroke-dasharray="5 4"></rect>
+                <text x="80" y="126" text-anchor="middle" font-weight="700">no object</text>
+                <text x="80" y="143" text-anchor="middle" font-size="11" fill="#7d7d73">nothing on chain</text>
+
+                <path d="M144 128 L200 128" stroke="#10120f" stroke-width="2"></path>
+                <path d="M208 128 l-9 -5 l0 10 z" fill="#10120f"></path>
+                <text x="176" y="120" text-anchor="middle" font-size="11" font-weight="700">CREATE</text>
+
+                <rect x="212" y="96" width="150" height="64" fill="var(--acid)" stroke="#10120f" stroke-width="2"></rect>
+                <text x="287" y="122" text-anchor="middle" font-weight="700">ACTIVE</text>
+                <text x="287" y="140" text-anchor="middle" font-size="11">one carrier, one pair, sequence n</text>
+
+                <!-- self loops -->
+                <path d="M250 96 C244 52 330 52 324 96" stroke="var(--side-a)" stroke-width="2" fill="none"></path>
+                <path d="M324 96 l-6 -9 l11 -2 z" fill="var(--side-a)"></path>
+                <text x="287" y="48" text-anchor="middle" font-size="11" font-weight="700" fill="var(--side-a)">MARK, sequence + 1, chapter + 1</text>
+
+                <path d="M250 160 C244 210 330 210 324 160" stroke="var(--side-b)" stroke-width="2" fill="none"></path>
+                <path d="M324 160 l-6 9 l11 2 z" fill="var(--side-b)"></path>
+                <text x="287" y="226" text-anchor="middle" font-size="11" font-weight="700" fill="var(--side-b)">ROTATE, sequence + 1, new pair</text>
+
+                <!-- terminals -->
+                <path d="M362 112 L470 58" stroke="#10120f" stroke-width="2"></path>
+                <path d="M478 54 l-10 -1 l4 9 z" fill="#10120f"></path>
+                <text x="404" y="78" font-size="11" font-weight="700">CLOSE</text>
+
+                <path d="M362 128 L470 128" stroke="#10120f" stroke-width="2"></path>
+                <path d="M478 128 l-9 -5 l0 10 z" fill="#10120f"></path>
+                <text x="404" y="121" font-size="11" font-weight="700">REFUND</text>
+
+                <path d="M362 144 L470 198" stroke="#7d7d73" stroke-width="2" stroke-dasharray="5 4"></path>
+                <path d="M478 202 l-4 -9 l-6 8 z" fill="#7d7d73"></path>
+                <text x="386" y="188" font-size="11" font-weight="700" fill="#7d7d73">any other spend</text>
+
+                <rect x="482" y="30" width="262" height="46" fill="var(--paper-bright)" stroke="#10120f" stroke-width="2"></rect>
+                <text x="613" y="52" text-anchor="middle" font-weight="700">CLOSED</text>
+                <text x="613" y="67" text-anchor="middle" font-size="11">sequence + 1, keys retained</text>
+
+                <rect x="482" y="105" width="262" height="46" fill="var(--paper-bright)" stroke="#10120f" stroke-width="2"></rect>
+                <text x="613" y="127" text-anchor="middle" font-weight="700">REFUNDED</text>
+                <text x="613" y="142" text-anchor="middle" font-size="11">sequence unchanged</text>
+
+                <rect x="482" y="180" width="262" height="46" fill="#e7e5db" stroke="#7d7d73" stroke-width="2" stroke-dasharray="5 4"></rect>
+                <text x="613" y="202" text-anchor="middle" font-weight="700" fill="#7d7d73">EXITED_NONCANONICAL</text>
+                <text x="613" y="217" text-anchor="middle" font-size="11" fill="#7d7d73">sequence unchanged, not chosen</text>
+              </g>
+            </svg>
+            <figcaption>
+              Three ways out, only two of them deliberate. The dashed path is what happens when a
+              confirmed transaction consumes the carrier without matching any operation template.
+            </figcaption>
+          </figure>
+
+          <div class="rule">
+            <span class="rule-id">ST-2</span>
+            <p>
+              Any confirmed transaction that consumes an active carrier but does not validate as
+              one allowed operation MUST atomically terminate that object as
+              <code>EXITED_NONCANONICAL</code>. The spend is not ignored, because the active UTXO
+              no longer exists. If one transaction consumes several active carriers, every consumed
+              object terminates. Tandem never combines, splits, or forks objects.
+              <span class="rule-src">tandem.md section 10</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ST-3</span>
+            <p>
+              Terminal objects never become active again except by a reorganization of the active chain
+              that removes their terminal spend. <code>CLOSED</code>, <code>REFUNDED</code>, and
+              <code>EXITED_NONCANONICAL</code> have no Tandem successor operation.
+              <span class="rule-src">tandem.md section 10</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ST-4</span>
+            <p>
+              For each object: the genesis outpoint is permanently its valid CREATE outpoint
+              <code>(create_txid,1)</code>; sequence starts at 0; MARK, ROTATE, and CLOSE require
+              and record exactly predecessor sequence plus one; REFUND and a terminal EXITED_NONCANONICAL event both retain
+              the predecessor sequence; an active object has exactly one current outpoint, one
+              sorted current key pair, carrier value 20,000, and the greatest valid state sequence;
+              a valid MARK alone increments <code>chapter_count</code>; a terminal object has no
+              current outpoint, retains its last key pair and sequence, and records its terminal
+              txid; and invalid no-state events never mutate an object or a counter.
+              <span class="rule-src">tandem.md section 10</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ST-5</span>
+            <p>
+              A valid CREATE is founding exactly when its confirmation height on the active chain lies in
+              <code>[H_open, H_close)</code>. Founding status is immutable while that CREATE
+              remains at that height. A reorganization can remove the CREATE or change
+              its height, and therefore its founding status.
+              <span class="rule-src">tandem.md section 10</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ST-6</span>
+            <p>The three post-block counters are exactly:<span class="rule-src">tandem.md section 10</span></p>
+            <ul>
+              <li><code>founding_created</code>: all valid CREATE objects on the active chain whose CREATE height is in <code>[H_open, H_close)</code>, including terminal objects.</li>
+              <li><code>all_objects</code>: every valid CREATE on the active chain at or after <code>H_open</code>, including founding, ordinary, active, and terminal objects.</li>
+              <li><code>active_objects</code>: every object whose post-block status is <code>ACTIVE</code>.</li>
+            </ul>
+            <p>
+              CLOSE, REFUND, and a terminal EXITED_NONCANONICAL event reduce only <code>active_objects</code>. A
+              reorganization may change any counter. Mempool transactions never change protocol
+              state or counters.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ST-7</span>
+            <p>
+              A conforming implementation MUST preserve every invariant in tandem.md section 15,
+              including that one binary object key maps to exactly one valid CREATE outpoint and
+              one status; a valid outpoint on the active chain is consumed at most once; a chapter is unique
+              by <code>(object_key, state_seq)</code>; a carrier represents one jointly controlled
+              object and is counted once, not once per key; and founding status depends only on
+              the CREATE confirmation height on the active chain.
+              <span class="rule-src">tandem.md section 15</span>
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ST-8</span>
+            <p>
+              Given the same deployment binding, the same exact specification bytes, and the same
+              blocks on the active chain, independent implementations MUST produce identical events, reason
+              codes, state, counters, event roots, object-state roots, and chained roots at every
+              height. This is the invariant the two-pipeline agreement procedure exists to test.
+              <span class="rule-src">tandem.md section 15, invariant 12</span>
+            </p>
+          </div>
+        </section>
+
+        <section id="invalid" aria-labelledby="invalid-title">
+          <p class="kicker">Rules INV-1 to INV-5</p>
+          <h2 id="invalid-title">6. Invalidity conditions and precedence</h2>
+          <p class="lede">
+            Tandem does not merely reject bad transactions. It assigns each one exactly one stable
+            reason code, chosen by a fixed precedence. Two conforming implementations must select
+            the same code, not just the same verdict.
+          </p>
+
+          <h3>6.1 Top-level dispatch</h3>
+
+          <div class="rule">
+            <span class="rule-id">INV-1</span>
+            <p>
+              For each confirmed transaction in scope, perform these steps in order.
+              <span class="rule-src">tandem.md section 11.2</span>
+            </p>
+            <ol>
+              <li>Find all marker candidates by REC-1.</li>
+              <li>Remove foreign INIT candidates by REC-3.</li>
+              <li>If this is the configured INIT txid and no marker remains, emit one class 0 event with reason <code>BAD_MARKER_ENCODING_OR_LENGTH</code>, event type <code>INVALID</code>, <code>event_index</code> <code>0xffffffff</code>, and stop. The INIT fails.</li>
+              <li>Join every input prevout against active object state as it exists immediately before this transaction in block transaction order. The matches are the carrier spends.</li>
+              <li>If more than one marker remains, stop ordinary validation. With no carrier spend, emit one class 0 <code>MULTIPLE_MARKERS</code> event. Otherwise emit one class 2 terminal event per carrier spend, all with reason <code>MULTIPLE_MARKERS</code>, and terminate those objects.</li>
+              <li>If more than one active carrier is spent, emit one class 2 terminal event per carrier with reason <code>MULTIPLE_CARRIERS</code> and terminate them. This applies whether zero or one marker remains.</li>
+              <li>If no marker remains and exactly one carrier is spent, inspect shape. With exactly one input and two outputs, dispatch only to REFUND recognition: a match emits REFUND, any failure emits one terminal <code>BAD_REFUND_SHAPE_OR_MATURITY</code>. Otherwise emit one terminal <code>UNMARKED_CARRIER_SPEND</code>.</li>
+              <li>If no marker remains and no carrier is spent, emit no event.</li>
+              <li>If exactly one marker remains, parse and validate it. The configured INIT txid requires opcode INIT; a different defined opcode is a fixed-field failure; an undefined opcode remains <code>UNKNOWN_OPCODE</code>.</li>
+              <li>A valid operation emits its valid event and applies its exact state delta.</li>
+              <li>An invalid single-marker transaction with no carrier spend emits one class 0 event and no state delta.</li>
+              <li>An invalid single-marker transaction with one carrier spend emits one class 2 <code>EXITED_NONCANONICAL</code> event, records the selected validation reason, and terminates the consumed object.</li>
+            </ol>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">INV-2</span>
+            <p>
+              Dispatch steps 5 through 7 take precedence over numeric reason-code order. A
+              transaction with multiple markers and multiple carriers therefore receives
+              <code>MULTIPLE_MARKERS</code>, while a transaction with one or zero markers and
+              multiple carriers receives <code>MULTIPLE_CARRIERS</code>.
+              <span class="rule-src">tandem.md section 11.2</span>
+            </p>
+          </div>
+
+          <h3>6.2 Single-marker validation order</h3>
+
+          <div class="rule">
+            <span class="rule-id">INV-3</span>
+            <p>
+              Within a selected single-marker operation, evaluate safely testable conditions in
+              ascending reason-code order and return the lowest failing code. A parser MUST NOT
+              guess a field that cannot be decoded. A state-dependent comparison that cannot be
+              made because no active predecessor exists is deferred to
+              <code>PREDECESSOR_NOT_ACTIVE</code>; independent earlier checks remain testable.
+              <span class="rule-src">tandem.md section 11.3</span>
+            </p>
+          </div>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Ordered validation groups. Evaluate ascending, return the lowest failure.</caption>
+              <thead><tr><th>Code</th><th>Validation group</th></tr></thead>
+              <tbody>
+                <tr><td><code>0x0002</code></td><td>Push prefix, completeness, minimality, script termination, maximum size, exact known-opcode payload length</td></tr>
+                <tr><td><code>0x0003</code></td><td>Marker format</td></tr>
+                <tr><td><code>0x0004</code></td><td>Network</td></tr>
+                <tr><td><code>0x0005</code></td><td>Opcode</td></tr>
+                <tr><td><code>0x0006</code></td><td>Non-INIT namespace</td></tr>
+                <tr><td><code>0x0007</code></td><td>Fixed payload fields, supported kind or reason, flags, reserved bytes, INIT constants and <code>spec_hash</code>, required INIT opcode at the configured txid</td></tr>
+                <tr><td><code>0x0010</code></td><td>Transaction version and locktime</td></tr>
+                <tr><td><code>0x0011</code></td><td>Input count, fixed input roles, input order, fixed sequences</td></tr>
+                <tr><td><code>0x0012</code></td><td>Output count, fixed output roles, marker position, absence of another OP_RETURN output</td></tr>
+                <tr><td><code>0x0013</code></td><td>Earlier-block confirmation provenance</td></tr>
+                <tr><td><code>0x0014</code></td><td>Required prevout script types, scriptSig shapes, witness shapes, carrier witness script shape</td></tr>
+                <tr><td><code>0x0015</code></td><td>Curve validity, distinctness, sorting, HASH160 binding, sponsor membership, current carrier binding, ROTATE pair difference</td></tr>
+                <tr><td><code>0x0016</code></td><td>Signature validity, signature order, strict DER, low-S, <code>SIGHASH_ALL</code></td></tr>
+                <tr><td><code>0x0017</code></td><td>Marker output value, fixed carrier value, CREATE carrier script, non-successor change or payout scripts and destinations</td></tr>
+                <tr><td><code>0x0018</code></td><td>Positive exact fee and checked fee arithmetic</td></tr>
+                <tr><td><code>0x0019</code></td><td>Participant fee split, equal payout, sponsor arithmetic, 1,000-satoshi change floors</td></tr>
+                <tr><td><code>0x001a</code></td><td>Active predecessor existence on the active chain</td></tr>
+                <tr><td><code>0x001b</code></td><td>Exact state sequence increment and overflow prevention</td></tr>
+                <tr><td><code>0x001c</code></td><td>MARK successor script preservation or ROTATE successor derivation</td></tr>
+                <tr><td><code>0x001d</code></td><td>Nonzero MARK commitment</td></tr>
+                <tr><td><code>0x001e</code></td><td>INIT height relations or CREATE opening height</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">INV-4</span>
+            <p>
+              Three tie-breaks are called out explicitly. For MARK and ROTATE, a vout 1 amount
+              other than 20,000 is <code>BAD_OUTPUT_SCRIPT_OR_VALUE</code>; only once the amount is
+              valid does a wrong successor script become <code>BAD_SUCCESSOR</code>. For CREATE, a
+              wrong vout 1 carrier script is <code>BAD_OUTPUT_SCRIPT_OR_VALUE</code>. CLOSE and
+              REFUND equality failures are fee-split failures, assigned after their output
+              destinations and positive fee are established.
+              <span class="rule-src">tandem.md section 11.3</span>
+            </p>
+          </div>
+
+          <h3>6.3 The stable reason registry</h3>
+
+          <div class="rule">
+            <span class="rule-id">INV-5</span>
+            <p>
+              This registry is exhaustive. Names and numeric values are permanent within Tandem.
+              <code>VALID</code> is used only for a recognized valid operation.
+              <span class="rule-src">tandem.md section 12</span>
+            </p>
+          </div>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>All 26 stable reasons. Every one is exercised by the published golden corpus.</caption>
+              <thead><tr><th>Code</th><th>Stable name</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>0x0000</code></td><td><code>VALID</code></td><td>Exact recognized INIT, CREATE, MARK, ROTATE, CLOSE, or REFUND</td></tr>
+                <tr><td><code>0x0001</code></td><td><code>MULTIPLE_MARKERS</code></td><td>More than one remaining Tandem marker candidate</td></tr>
+                <tr><td><code>0x0002</code></td><td><code>BAD_MARKER_ENCODING_OR_LENGTH</code></td><td>Nonminimal push, malformed script, incomplete push, trailing script data, oversized payload, or wrong exact payload length</td></tr>
+                <tr><td><code>0x0003</code></td><td><code>UNKNOWN_MARKER_FORMAT</code></td><td>Marker format is not <code>0x01</code></td></tr>
+                <tr><td><code>0x0004</code></td><td><code>WRONG_NETWORK</code></td><td>Marker network differs from the bound chain</td></tr>
+                <tr><td><code>0x0005</code></td><td><code>UNKNOWN_OPCODE</code></td><td>Opcode is not defined for Tandem</td></tr>
+                <tr><td><code>0x0006</code></td><td><code>WRONG_NAMESPACE</code></td><td>A non-INIT namespace commitment differs from the configured INIT namespace</td></tr>
+                <tr><td><code>0x0007</code></td><td><code>UNSUPPORTED_OR_RESERVED_FIELD</code></td><td>A fixed field, constant, supported kind or reason, flag, reserved byte, configured INIT opcode, or INIT <code>spec_hash</code> differs</td></tr>
+                <tr><td><code>0x0010</code></td><td><code>BAD_TX_VERSION_OR_LOCKTIME</code></td><td>Transaction version or locktime differs from the exact template</td></tr>
+                <tr><td><code>0x0011</code></td><td><code>BAD_INPUT_COUNT_OR_ORDER</code></td><td>Input count, position, role, or required sequence differs</td></tr>
+                <tr><td><code>0x0012</code></td><td><code>BAD_OUTPUT_COUNT_OR_ORDER</code></td><td>Output count, position, role, marker position, or only-OP_RETURN requirement differs</td></tr>
+                <tr><td><code>0x0013</code></td><td><code>UNCONFIRMED_OR_SAME_BLOCK_PREVOUT</code></td><td>A required prior output was not confirmed in an earlier block</td></tr>
+                <tr><td><code>0x0014</code></td><td><code>BAD_INPUT_SCRIPT</code></td><td>A prevout, scriptSig, witness stack, or revealed witness script has the wrong required form</td></tr>
+                <tr><td><code>0x0015</code></td><td><code>BAD_KEY_ORDER_OR_BINDING</code></td><td>A key is invalid, duplicate, unsorted, unchanged when rotation is required, or not bound to its required input, output, sponsor, or carrier role</td></tr>
+                <tr><td><code>0x0016</code></td><td><code>BAD_SIGNATURE_OR_SIGHASH</code></td><td>A required signature is invalid, wrongly ordered, non-DER, high-S, or not <code>SIGHASH_ALL</code></td></tr>
+                <tr><td><code>0x0017</code></td><td><code>BAD_OUTPUT_SCRIPT_OR_VALUE</code></td><td>Marker value, fixed carrier value, CREATE carrier script, or a required non-successor destination script or key differs</td></tr>
+                <tr><td><code>0x0018</code></td><td><code>NONPOSITIVE_OR_INVALID_FEE</code></td><td>Fee is zero, negative, overflowed, underflowed, or cannot be computed exactly</td></tr>
+                <tr><td><code>0x0019</code></td><td><code>BAD_FEE_SPLIT_OR_CHANGE</code></td><td>A debit split, equal payout, sponsor change equation, or 1,000-satoshi change floor differs after fee positivity is established</td></tr>
+                <tr><td><code>0x001a</code></td><td><code>PREDECESSOR_NOT_ACTIVE</code></td><td>The operation does not reference the active predecessor on the active chain required for it</td></tr>
+                <tr><td><code>0x001b</code></td><td><code>BAD_STATE_SEQUENCE</code></td><td>State sequence is not predecessor plus one or cannot be incremented</td></tr>
+                <tr><td><code>0x001c</code></td><td><code>BAD_SUCCESSOR</code></td><td>MARK does not preserve the carrier script or ROTATE does not derive the proposed successor carrier script</td></tr>
+                <tr><td><code>0x001d</code></td><td><code>BAD_COMMITMENT</code></td><td>MARK chapter commitment is all zero</td></tr>
+                <tr><td><code>0x001e</code></td><td><code>BAD_HEIGHT_OR_PHASE</code></td><td>INIT lead or window relation fails, arithmetic overflows, or CREATE confirms before <code>H_open</code></td></tr>
+                <tr><td><code>0x001f</code></td><td><code>BAD_REFUND_SHAPE_OR_MATURITY</code></td><td>A markerless one-carrier, one-input, two-output candidate fails any exact REFUND rule</td></tr>
+                <tr><td><code>0x0020</code></td><td><code>MULTIPLE_CARRIERS</code></td><td>A transaction spends more than one active Tandem carrier</td></tr>
+                <tr><td><code>0x0030</code></td><td><code>UNMARKED_CARRIER_SPEND</code></td><td>An active carrier is spent without a remaining Tandem marker and the transaction is not dispatched as REFUND</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>6.4 Event types and validity classes</h3>
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">EVENT TYPE</span></h4>
+              <ul>
+                <li><code>0x00</code> INIT</li>
+                <li><code>0x01</code> CREATE</li>
+                <li><code>0x02</code> MARK</li>
+                <li><code>0x03</code> ROTATE</li>
+                <li><code>0x04</code> CLOSE</li>
+                <li><code>0x05</code> REFUND</li>
+                <li><code>0x06</code> EXITED_NONCANONICAL</li>
+                <li><code>0x07</code> INVALID</li>
+              </ul>
+            </div>
+            <div>
+              <h4><span class="side-tag b">VALIDITY CLASS</span></h4>
+              <ul>
+                <li><code>0x00</code> INVALID_NO_STATE</li>
+                <li><code>0x01</code> VALID_OPERATION</li>
+                <li><code>0x02</code> TERMINAL_NONCANONICAL</li>
+              </ul>
+              <p>
+                A class 0 event uses the attempted operation type only when exactly one marker
+                exposes marker format <code>0x01</code> and a defined opcode. Otherwise it uses type
+                <code>INVALID</code>. A class 2 event always uses type
+                <code>EXITED_NONCANONICAL</code>, even when its reason came from an attempted marked
+                operation.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="roots" aria-labelledby="roots-title">
+          <p class="kicker">Rules ROOT-1 to ROOT-4</p>
+          <h2 id="roots-title">7. Authoritative roots</h2>
+          <p class="lede">
+            Roots are how two implementations compare their whole view of history in 32 bytes. They
+            use only SHA256 and fixed-width encodings, and only confirmed state from the active chain. Mempool
+            observations are never included.
+          </p>
+
+          <div class="rule">
+            <span class="rule-id">ROOT-1</span>
+            <p>
+              Each event contributes one leaf. Order leaves by the tuple
+              <code>(tx_index, event_index, sub_index)</code>, comparing each unsigned integer
+              numerically.
+              <span class="rule-src">tandem.md sections 13.2, 14.1</span>
+            </p>
+            <div class="code">
+              <span class="code-label">Event leaf preimage</span>
+              <pre><code>SHA256(
+  "TANDEM/EVENT\0" ||        <span aria-hidden="true">// 13 bytes</span>
+  namespace32 || block_hash_wire32 || height_u64le ||
+  tx_index_u32le || event_index_u32le || sub_index_u32le ||
+  event_type_u8 || validity_class_u8 || reason_u16le ||
+  txid_wire32 || wtxid_wire32 || object_key32 ||
+  state_seq_u32le || predecessor_outpoint36 || successor_outpoint36 ||
+  key0_33 || key1_33 || commitment32
+)</code></pre>
+            </div>
+            <p>
+              The field block after the domain tag is exactly 358 bytes. See
+              <a href="#errata">the errata</a> for the total preimage length.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ROOT-2</span>
+            <p>
+              After applying all transactions in a block, every surviving object contributes
+              exactly one snapshot leaf. Order object leaves by unsigned bytewise lexicographic
+              <code>object_key32</code>.
+              <span class="rule-src">tandem.md section 14.2</span>
+            </p>
+            <div class="code">
+              <span class="code-label">Object-state leaf preimage, 204 bytes total</span>
+              <pre><code>SHA256(
+  "TANDEM/OBJECT-STATE\0" || <span aria-hidden="true">// 20 bytes</span>
+  object_key32 || founding_u8 || status_u8 ||
+  create_height_u64le || state_seq_u32le || current_outpoint36 ||
+  key0_33 || key1_33 || terminal_txid_wire32 || chapter_count_u32le
+)</code></pre>
+            </div>
+            <p>
+              Active objects use their active carrier as <code>current_outpoint36</code> and
+              <code>zero32</code> as terminal txid. Terminal objects use <code>zero36</code> as
+              current outpoint, retain their last keys and sequence, and record the txid of CLOSE,
+              REFUND, or the carrier spend that terminated it.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ROOT-3</span>
+            <p>
+              Both Merkle trees duplicate an unpaired final hash at every level and hash it with
+              itself. One leaf is its own root with no additional node hash.
+              <span class="rule-src">tandem.md sections 14.1, 14.2</span>
+            </p>
+            <div class="scroll-x">
+              <table class="tbl">
+                <caption>Domain tags and their exact byte lengths, including the terminating zero byte</caption>
+                <thead><tr><th>Purpose</th><th>Domain tag</th><th>Bytes</th></tr></thead>
+                <tbody>
+                  <tr><td>Namespace commitment</td><td><code>TANDEM/NAMESPACE\0</code></td><td>17</td></tr>
+                  <tr><td>Object key</td><td><code>TANDEM/OBJECT\0</code></td><td>14</td></tr>
+                  <tr><td>Chapter commitment</td><td><code>TANDEM/CHAPTER\0</code></td><td>15</td></tr>
+                  <tr><td>Close commitment</td><td><code>TANDEM/CLOSE\0</code></td><td>13</td></tr>
+                  <tr><td>Event leaf</td><td><code>TANDEM/EVENT\0</code></td><td>13</td></tr>
+                  <tr><td>Event Merkle node</td><td><code>TANDEM/EVENT-NODE\0</code></td><td>18</td></tr>
+                  <tr><td>Empty event root</td><td><code>TANDEM/EVENT-EMPTY\0</code></td><td>19</td></tr>
+                  <tr><td>Object-state leaf</td><td><code>TANDEM/OBJECT-STATE\0</code></td><td>20</td></tr>
+                  <tr><td>Object Merkle node</td><td><code>TANDEM/OBJECT-NODE\0</code></td><td>19</td></tr>
+                  <tr><td>Empty object root</td><td><code>TANDEM/OBJECT-EMPTY\0</code></td><td>20</td></tr>
+                  <tr><td>Pre-INIT state root</td><td><code>TANDEM/STATE-EMPTY\0</code></td><td>19</td></tr>
+                  <tr><td>Chained block root</td><td><code>TANDEM/BLOCKROOT\0</code></td><td>17</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>
+              An empty event set for a block hashes
+              <code>"TANDEM/EVENT-EMPTY\0" || namespace_commitment</code>; an empty object set
+              hashes <code>"TANDEM/OBJECT-EMPTY\0" || namespace_commitment</code>.
+            </p>
+          </div>
+
+          <div class="rule">
+            <span class="rule-id">ROOT-4</span>
+            <p>
+              The chained root links every block on the active chain from the configured INIT confirmation
+              block onward, including blocks with no Tandem event. The root immediately before that
+              block is <code>SHA256("TANDEM/STATE-EMPTY\0" || namespace_commitment)</code>.
+              <span class="rule-src">tandem.md section 14.3</span>
+            </p>
+            <div class="code">
+              <span class="code-label">Chained block root preimage, 209 bytes total</span>
+              <pre><code>R_h = SHA256(
+  "TANDEM/BLOCKROOT\0" ||    <span aria-hidden="true">// 17 bytes</span>
+  namespace_commitment || R_prev || block_hash_wire32 || height_u64le ||
+  event_root32 || object_state_root32 ||
+  founding_created_u64le || all_objects_u64le || active_objects_u64le
+)</code></pre>
+            </div>
+            <p>
+              <code>R_h</code> becomes <code>R_prev</code> for the next block on the active chain. Each
+              counter is the post-block value. Connecting a block applies transactions in
+              transaction-index order, records events, applies state deltas atomically, computes
+              both component roots and counters, then computes the chained root. Disconnecting a
+              block reverses its state mutations and roots in exact reverse order before a
+              replacement branch is applied.
+            </p>
+          </div>
+        </section>
+
+        <section id="errata" aria-labelledby="errata-title">
+          <p class="kicker">Known discrepancy</p>
+          <h2 id="errata-title">8. Errata</h2>
+          <p class="lede">
+            The specification bytes are frozen and hash-pinned, so an error in its prose cannot be
+            corrected in place without changing <code>spec_hash</code> and therefore the protocol
+            identity. One such error exists. It is documented here rather than silently repaired.
+          </p>
+
+          <div class="note errata">
+            <strong>ERRATUM 1: the stated event-leaf preimage length is wrong.</strong>
+            <p>
+              tandem.md section 13.2 states that the preimage after the domain tag is exactly 358
+              bytes, that the domain tag is 16 bytes, and that the complete preimage is exactly 374
+              bytes. The 358-byte field block is correct. The other two numbers are not.
+            </p>
+            <p>
+              The domain tag <code>TANDEM/EVENT\0</code> is 12 ASCII characters plus one zero byte,
+              so it is 13 bytes. The complete preimage is therefore 371 bytes.
+            </p>
+            <p>
+              This is not a matter of interpretation. Every event preimage published in
+              <a href="../vectors/generated/golden.json">vectors/generated/golden.json</a> is 371
+              bytes long, and hashing each one reproduces the published leaf. The independent Rust
+              verifier asserts 371 bytes at the same point. Both implementations and the frozen
+              vectors agree with each other and disagree with the prose sentence.
+            </p>
+            <p>
+              An implementation MUST follow the byte layout and the published vectors, which are
+              unambiguous, and MUST NOT pad the preimage to 374 bytes.
+            </p>
+          </div>
+
+          <p>
+            You can confirm this yourself without trusting this page. The
+            <a href="pair-check.html#roots">pair check tool</a> hashes the published preimages in
+            your browser and prints their length alongside the recomputed leaves, and
+            <a href="vectors.html#roots">the vectors page</a> lists the same measurement.
+          </p>
+
+          <h3>Protocol boundary</h3>
+          <p>
+            Tandem is immutable. Unknown marker formats, opcodes, kinds, reasons, nonzero flags,
+            nonzero reserved bytes, extension bytes, nonminimal pushes, and oversized payloads are
+            invalid. A distinct protocol requires a different specification hash, INIT, namespace,
+            and protocol identifier, and a parser for a distinct protocol MUST NOT reinterpret
+            Tandem events or state. No Tandem rule grants an administrator, coordinator, content
+            host, indexer, wallet, or issuer authority to change keys, sequence, commitments,
+            founding status, object status, roots, or supply.
+          </p>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="protocol.html">Back: dossier overview</a>
+          <a href="guide.html">Next: guide and worked examples</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="../tandem.md">Raw specification</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

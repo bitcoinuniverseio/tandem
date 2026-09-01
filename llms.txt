@@ -1,0 +1,59 @@
+# Tandem
+
+> Tandem is an original Bitcoin Universe protocol. It defines one Bitcoin-native object controlled by a matched pair of keys, where every state change requires both halves of the pair. The pairing requirement is enforced by an exact 2-of-2 native P2WSH carrier output and by a deterministic parser with an exhaustive stable reason registry.
+
+Status: the protocol is finalized and its bytes are frozen. Mainnet is NOT active. No repository, website, or funded address constitutes activation. Do not construct or broadcast a Tandem transaction with real funds.
+
+Scope note: Tandem has no entry in the Bitcoin Universe capability snapshot, which records 38 protocols and 29 marketplace integrations. No Universe product implements a buy, sell, list, or transfer path for a Tandem object. Tandem defines shared control and a history, not a tradable asset.
+
+This site publishes the authoritative protocol bytes, three JSON Schemas, a golden vector corpus, and a documentation dossier. The bytes at /tandem.md are the source of truth; every other page is navigation and explanation.
+
+## Authoritative artifacts
+
+- [Normative specification](https://bitcoinuniverseio.github.io/tandem/tandem.md): the complete protocol. SHA256 caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f, 47343 bytes, UTF-8, LF endings, no BOM, exactly one final LF. Hash it as raw bytes with no normalization.
+- [Specification release record](https://bitcoinuniverseio.github.io/tandem/release/spec.json): digest, byte count, line count, encoding, and finalization status.
+- [Public contract index](https://bitcoinuniverseio.github.io/tandem/protocol/README.md): the stable paths of every published artifact.
+
+## Protocol dossier
+
+- [Dossier overview](https://bitcoinuniverseio.github.io/tandem/docs/protocol.html): plain-language introduction, the five places a pair must match, and the object model.
+- [Normative specification as numbered rules](https://bitcoinuniverseio.github.io/tandem/docs/specification.html): identity and binding, record format, pairing rules, operation validity, state transitions, invalidity and rejection precedence, authoritative roots, and one documented erratum.
+- [Guide and worked examples](https://bitcoinuniverseio.github.io/tandem/docs/guide.html): derive a binding, build a carrier from two keys, decode a marker byte by byte, split a fee, follow an object, classify a failure, commit to content.
+- [Pair check tool](https://bitcoinuniverseio.github.io/tandem/docs/pair-check.html): an in-browser verifier that takes two candidate records or two candidate keys and reports which numbered rule and stable reason code each check maps to. Client-side only.
+- [Indexer semantics](https://bitcoinuniverseio.github.io/tandem/docs/indexing.html): block scope, confirmation provenance, block connection, reorganization, why the mempool never reaches protocol state, and two-pipeline agreement.
+- [JSON Schema reference](https://bitcoinuniverseio.github.io/tandem/docs/schemas.html): all three published schemas explained field by field.
+- [Test vectors](https://bitcoinuniverseio.github.io/tandem/docs/vectors.html): the golden corpus, all 31 validation cases, and every root with the formula that reproduces it.
+- [Independent verifier](https://bitcoinuniverseio.github.io/tandem/docs/verifier.html): the second implementation in Rust, what it proves, and what it does not.
+- [Conformance and implementation checklist](https://bitcoinuniverseio.github.io/tandem/docs/conformance.html): the conformance claim, available evidence, an ordered build checklist, and common divergence causes.
+- [Security, limitations, and changelog](https://bitcoinuniverseio.github.io/tandem/docs/considerations.html): protected properties, the risks pairing adds, honest limitations, and the change record.
+
+## Machine-readable contracts
+
+- [Chapter manifest schema](https://bitcoinuniverseio.github.io/tandem/schemas/chapter.schema.json): JSON Schema Draft 2020-12, urn:tandem:schema:chapter.
+- [Close manifest schema](https://bitcoinuniverseio.github.io/tandem/schemas/close.schema.json): JSON Schema Draft 2020-12, urn:tandem:schema:close.
+- [Agreement envelope schema](https://bitcoinuniverseio.github.io/tandem/schemas/agreement-envelope.schema.json): JSON Schema Draft 2020-12, urn:tandem:schema:agreement-envelope.
+- [Golden fixture corpus](https://bitcoinuniverseio.github.io/tandem/vectors/generated/golden.json): markers, reason registry, 31 validation cases, event and object leaves with full preimages, Merkle levels, and roots.
+- [Golden vector manifest](https://bitcoinuniverseio.github.io/tandem/vectors/generated/manifest.json): binds the specification digest, the fixture digest, and the vector root.
+- [CREATE marker example](https://bitcoinuniverseio.github.io/tandem/vectors/create-marker.example.json): a minimal standalone marker input.
+
+## Key protocol facts
+
+- Operations: INIT (opcode 0x00), CREATE (0x01), MARK (0x02), ROTATE (0x03), CLOSE (0x04), plus a markerless REFUND recovery path.
+- Object statuses: ACTIVE, CLOSED, REFUNDED, EXITED_NONCANONICAL. A confirmed carrier spend that does not validate as an operation terminates the object.
+- Fixed constants: carrier value 20,000 satoshis, refund delay 52,560 blocks, founding window 4,320 blocks, INIT lead 1,008 blocks, wire magic TNDM, marker format 0x01.
+- The carrier is an exact 71-byte 2-of-2 witness script wrapped in native P2WSH, with keys sorted so key0 is below key1 by unsigned bytewise order.
+- The reason registry has 26 permanent entries, from VALID (0x0000) to UNMARKED_CARRIER_SPEND (0x0030). An implementation must return the lowest failing code, not merely a true one.
+- Every required prevout must have confirmed in a strictly earlier block. Same-block chaining fails with UNCONFIRMED_OR_SAME_BLOCK_PREVOUT.
+- Mempool observations never change protocol state, counters, or roots.
+- Known erratum: tandem.md section 13.2 states the event leaf preimage is 374 bytes with a 16-byte domain tag. The published vectors and the independent Rust verifier both use 371 bytes with a 13-byte domain tag. The 358-byte field block stated in the same sentence is correct. Follow the byte layout and the vectors.
+
+## Related repositories
+
+- [index-tandem](https://github.com/bitcoinuniverseio/index-tandem): TypeScript indexer, pipeline A, with a published OpenAPI contract. Describes itself as an implementation scaffold, not deployed infrastructure.
+- [tandem-verifier-rs](https://github.com/bitcoinuniverseio/tandem-verifier-rs): Rust independent verifier, pipeline B. Shares only frozen artifacts pinned by digest and does not import pipeline A.
+
+## Optional
+
+- [Product documentation](https://bitcoinuniverseio.github.io/tandem/docs/): the non-technical explanation of the product, its safety boundary, and its readiness path.
+- [Repository boundary](https://bitcoinuniverseio.github.io/tandem/REPOSITORY_BOUNDARY.md): what belongs in this public repository and what stays private.
+- [Security policy](https://bitcoinuniverseio.github.io/tandem/SECURITY.md): report suspected vulnerabilities privately, never in a public issue.

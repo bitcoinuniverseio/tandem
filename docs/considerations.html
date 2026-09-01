@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Tandem security considerations, the limits of what the protocol can and cannot do for you, and a dated changelog of the public protocol artifacts and this documentation."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem security, limitations, and changelog">
+    <meta property="og:description" content="What Tandem protects, what it cannot protect, the risks that shared control introduces, and the record of what has changed.">
+    <title>Tandem security, limitations, and changelog</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the page</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="conformance.html">Conformance</a>
+        <a href="verifier.html">Verifier</a>
+      </nav>
+      <a class="header-link" href="../SECURITY.md">Report privately</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Honesty</p>
+      <h1>What it protects,<br><em>and what it cannot.</em></h1>
+      <p class="dossier-lede">
+        Shared control changes the shape of the risk. It does not remove risk, and in a few specific
+        ways it adds some. This page states both directions plainly, then records what has changed.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Page sections">
+          <p>On this page</p>
+          <a href="#properties">1. What Tandem protects</a>
+          <a href="#new-risks">2. Risks pairing adds</a>
+          <a href="#threats">3. Threat notes</a>
+          <a href="#limitations">4. Limitations</a>
+          <a href="#not">5. What Tandem is not</a>
+          <a href="#reporting">6. Reporting a problem</a>
+          <a href="#changelog">7. Changelog</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="properties" aria-labelledby="properties-title">
+          <h2 id="properties-title">1. What Tandem protects</h2>
+          <p class="lede">
+            These properties come from the rules themselves, not from anyone's good behaviour. Each
+            one is enforced either by Bitcoin script or by the deterministic parser, and each names
+            the rule that provides it.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Protected properties and their sources</caption>
+              <thead><tr><th>Property</th><th>Enforced by</th></tr></thead>
+              <tbody>
+                <tr><td>Neither participant can advance the object alone</td><td>Bitcoin script, the 2-of-2 carrier, rules PAIR-2 and PAIR-3</td></tr>
+                <tr><td>Neither participant can end the object on better terms than the other</td><td>Equal, strictly positive payouts, rule PAIR-7</td></tr>
+                <tr><td>Neither participant can silently replace the other</td><td>ROTATE requires the old pair to authorize the new one, rule OP-4</td></tr>
+                <tr><td>History cannot be reordered or backdated</td><td>Exact sequence increments and the chained root, rules PAIR-5 and ROOT-4</td></tr>
+                <tr><td>An operation cannot be replayed onto another object</td><td>Namespace, genesis outpoint, and predecessor outpoint are all inside the commitment preimages</td></tr>
+                <tr><td>A deployment cannot be quietly substituted</td><td>The binding pins network, INIT txid, and specification digest; a different INIT is a different protocol, rules ID-1 and ID-2</td></tr>
+                <tr><td>No administrator can rewrite state</td><td>No rule grants any coordinator, host, indexer, wallet, or issuer that authority</td></tr>
+                <tr><td>Two implementations cannot silently differ</td><td>Stable reason codes and three roots, invariant 12</td></tr>
+                <tr><td>A prepared exit exists before the object moves</td><td>REFUND is pre-signed by both sides and matures on a relative lock, rule OP-6</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="new-risks" aria-labelledby="new-risks-title">
+          <h2 id="new-risks-title">2. Risks that pairing adds</h2>
+          <p class="lede">
+            This is the section most protocol documentation leaves out. Requiring two signatures
+            solves one problem by creating another: now two things can go wrong instead of one.
+          </p>
+
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">SIDE A</span> can stop everything</h4>
+              <p>
+                A participant who stops cooperating stops every cooperative operation. There is no
+                majority, no tie-break, and no arbitration. The only path that does not need live
+                cooperation is a REFUND that was already signed by both sides before it was needed.
+              </p>
+            </div>
+            <div>
+              <h4><span class="side-tag b">SIDE B</span> can stop everything too</h4>
+              <p>
+                The situation is exactly symmetric, which is the design working as intended. Neither
+                side has a lever the other lacks. Symmetric deadlock is the cost of symmetric
+                control.
+              </p>
+            </div>
+          </div>
+
+          <h3>Key loss is doubled</h3>
+          <p>
+            Two keys means two chances to lose one. A 2-of-2 has no redundancy: losing either key
+            has the same effect as losing both. If a prepared REFUND exists and its relative lock
+            has matured, the funds can still be recovered. If it does not, they cannot.
+          </p>
+
+          <h3>The recovery clock keeps restarting</h3>
+          <p>
+            The REFUND relative delay of 52,560 blocks is measured from the confirmation height of
+            the exact carrier being spent. Every confirmed MARK or ROTATE creates a new carrier and
+            restarts the delay. An active pair that adds chapters regularly is continually pushing
+            their own recovery path further into the future. A pair that intends to rely on recovery
+            should understand that using the object delays it.
+          </p>
+
+          <h3>A recovery path must be prepared before, not after</h3>
+          <p>
+            A REFUND spends a specific carrier and needs both signatures. Once cooperation has broken
+            down, it is too late to obtain the second signature. The rule is therefore operational
+            rather than protocol-level, and it is absolute: complete, export, checksum, and
+            restore-test the recovery transaction for a carrier before broadcasting the parent that
+            creates it.
+          </p>
+
+          <h3>An invalid spend is fatal, not merely rejected</h3>
+          <p>
+            If a confirmed transaction consumes an active carrier but does not match an operation
+            template, the object terminates as <code>EXITED_NONCANONICAL</code>. It does not fail
+            harmlessly. A wallet bug, an accidental coin selection that grabs a 20,000-satoshi
+            carrier as ordinary change, or a malformed marker all end the object permanently. Rule
+            ST-2 is not a punishment, it is an acknowledgement that the output is gone.
+          </p>
+
+          <div class="note warn">
+            <strong>Protect carriers from ordinary coin selection.</strong>
+            <p>
+              A carrier is a normal-looking 20,000-satoshi P2WSH output. Wallet software that does
+              not know about Tandem will happily treat it as spendable value. Any product that holds
+              keys near a Tandem object must mark carrier outpoints as protected, and should behave
+              conservatively around outputs it cannot classify.
+            </p>
+          </div>
+        </section>
+
+        <section id="threats" aria-labelledby="threats-title">
+          <h2 id="threats-title">3. Threat notes</h2>
+
+          <h3>Blind signing defeats the whole design</h3>
+          <p>
+            Every protection on this page assumes both participants know what they signed. A signing
+            flow that shows an opaque hash converts a 2-of-2 into a single point of failure operated
+            by whoever composed the transaction. Reconstruct and display inputs, outputs, amounts,
+            scripts, fees, sequences, locktime, key order, and commitments before asking for a
+            signature, and do it for the recovery transaction too.
+          </p>
+
+          <h3>A single parser is a trusted third party</h3>
+          <p>
+            Bitcoin consensus does not enforce Tandem rules, so the answer to what state an object
+            is in comes from a parser. A user reading one indexer's answer is trusting that
+            indexer. The mitigation is the two-pipeline agreement described on
+            <a href="verifier.html">the verifier page</a>, and it only helps if products actually
+            fail closed on disagreement rather than falling back to one pipeline.
+          </p>
+
+          <h3>Content is a separate trust domain</h3>
+          <p>
+            A commitment authenticates exact bytes. It says nothing about whether those bytes are
+            available, whether they are safe to render, or whether the person who committed them was
+            honest about what they are. Manifests arrive from whoever put a commitment on chain,
+            which is to say from anyone. Enforce your own size and type limits, verify bytes against
+            <code>content_sha256</code> before display, and never execute retrieved content.
+          </p>
+
+          <h3>Everything is public and permanent</h3>
+          <p>
+            Bitcoin events are observable by anyone, forever. A Tandem object publishes that two
+            specific keys are jointly controlling something, at specific times, with a specific
+            cadence of activity. Even with encrypted content, the existence, timing, and pattern of a
+            relationship is on a public ledger. Plan for correlation before committing anything
+            personal, legal, locational, or relational.
+          </p>
+
+          <h3>Coercion and disputes are outside the protocol</h3>
+          <p>
+            Tandem enforces that two keys signed. It cannot tell whether a person signed freely, and
+            it defines no ownership, no identity, and no dispute resolution. A signature obtained
+            under pressure is indistinguishable from one given willingly.
+          </p>
+        </section>
+
+        <section id="limitations" aria-labelledby="limitations-title">
+          <h2 id="limitations-title">4. Limitations</h2>
+          <p class="lede">
+            Stated as facts, not as future work.
+          </p>
+          <ul>
+            <li><strong>Mainnet is not active.</strong> The protocol is finalized; activation remains closed until independent verification, recovery, security, signer, and operational outcomes are complete and an explicit decision is recorded. No repository, website, or funded address constitutes activation.</li>
+            <li><strong>Exactly two participants.</strong> Not three, not a threshold, not a quorum. The carrier is a 2-of-2 and the payload has room for exactly one pair.</li>
+            <li><strong>No partial or conditional operations.</strong> There is no escrow, no timelock other than the fixed refund delay, and no conditional transfer.</li>
+            <li><strong>No transfer of an object.</strong> ROTATE replaces keys with the current pair's authorization; it is not a unilateral sale or handover, and there is no transfer primitive.</li>
+            <li><strong>No marketplace.</strong> The Bitcoin Universe capability snapshot lists 38 protocols, 29 with marketplace entries. Tandem has no entry in that snapshot, so no Universe product implements a buy, sell, list, or transfer path for it.</li>
+            <li><strong>Fixed constants.</strong> Carrier value 20,000 satoshis, refund delay 52,560 blocks, founding window 4,320 blocks, INIT lead 1,008 blocks. None are configurable; changing one is a different protocol.</li>
+            <li><strong>The protocol is immutable.</strong> There is no version negotiation and no extension mechanism. Unknown formats, opcodes, kinds, reasons, flags, reserved values, and oversized payloads are invalid, permanently.</li>
+            <li><strong>The specification prose contains one known error.</strong> See <a href="specification.html#errata">erratum 1</a>. It cannot be corrected in place without changing the digest and therefore the protocol identity.</li>
+            <li><strong>No conformance authority exists.</strong> No certification, no test service, no registry.</li>
+            <li><strong>The published corpus is partial.</strong> It contains no raw transactions, no signatures, no block data, and no reorganization scenarios.</li>
+            <li><strong>Neither implementation is a released product.</strong> Both public implementations describe themselves as source with unit coverage, not deployed infrastructure, and both disclaim live chain, database, and signing evidence.</li>
+            <li><strong>Continuous two-pipeline agreement has not been published.</strong> The agreement design is real and runnable against the fixed corpus. Sustained agreement over a live chain is recorded as not yet performed.</li>
+            <li><strong>Content availability is not provided.</strong> Tandem stores no files and guarantees no URI keeps resolving.</li>
+            <li><strong>No recovery from key loss beyond a prepared REFUND.</strong> There is no social recovery, no backup signer, and no administrator path.</li>
+          </ul>
+        </section>
+
+        <section id="not" aria-labelledby="not-title">
+          <h2 id="not-title">5. What Tandem is not</h2>
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">IT IS</span></h4>
+              <ul>
+                <li>A deterministic Bitcoin metaprotocol</li>
+                <li>One jointly controlled object with a continuous history</li>
+                <li>An exact set of transaction templates</li>
+                <li>A recovery path prepared in advance</li>
+                <li>Verifiable independently, in another language</li>
+              </ul>
+            </div>
+            <div>
+              <h4><span class="side-tag b">IT IS NOT</span></h4>
+              <ul>
+                <li>A token, an NFT, or an issuance scheme</li>
+                <li>A marketplace, an investment, or a yield product</li>
+                <li>A governance, ranking, or reputation system</li>
+                <li>An identity proof or a legal ownership record</li>
+                <li>A guarantee against key loss, coercion, or misuse</li>
+                <li>A storage layer for files</li>
+                <li>A platform with an administrator key</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Nothing in Tandem defines supply, price, rarity, royalties, or transferability. If a
+            product presents a Tandem object as any of those, the presentation is the product's
+            claim and not the protocol's.
+          </p>
+        </section>
+
+        <section id="reporting" aria-labelledby="reporting-title">
+          <h2 id="reporting-title">6. Reporting a problem</h2>
+          <p>
+            Treat fund-loss risk, signing confusion, unsafe coin selection, incorrect recovery,
+            divergent interpretation between implementations, and exposed credentials as sensitive.
+            Report them privately through
+            <a href="https://github.com/bitcoinuniverseio/tandem/security/advisories/new">GitHub private vulnerability reporting</a>
+            rather than in a public issue, and begin the title with <code>Security report:</code> so
+            maintainers can route it. See <a href="../SECURITY.md">SECURITY.md</a> for the full
+            policy.
+          </p>
+          <p>
+            A specification ambiguity that two reasonable implementations could resolve differently
+            is a security issue for a deterministic protocol, not a documentation nit. Please report
+            it as one.
+          </p>
+        </section>
+
+        <section id="changelog" aria-labelledby="changelog-title">
+          <h2 id="changelog-title">7. Changelog</h2>
+          <p class="lede">
+            This records changes to the public artifacts and to this documentation. The protocol
+            bytes themselves are frozen: any change to <a href="../tandem.md">tandem.md</a> would
+            change its digest and therefore create a different protocol, so there will never be a
+            version 2 of it under this identity.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Public artifact and documentation history</caption>
+              <thead><tr><th>Date</th><th>Change</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>2026-09-01</td>
+                  <td>
+                    Added this protocol dossier: a normative specification restated as numbered
+                    rules, a worked-example guide, an in-browser pair check tool, indexer semantics,
+                    a JSON Schema reference, a test-vector reference, an independent-verifier page,
+                    conformance material with an ordered implementation checklist, and this page.
+                    Documented erratum 1, the event-leaf preimage length. Enabled the published site.
+                    No protocol artifact was modified.
+                  </td>
+                </tr>
+                <tr>
+                  <td>2026-09-01</td>
+                  <td>Added a repository documentation manifest describing this repository to the Bitcoin Universe documentation portal.</td>
+                </tr>
+                <tr>
+                  <td>2026-08-31</td>
+                  <td>Public verification workflow restricted so that pull requests from forks do not run on private capacity.</td>
+                </tr>
+                <tr>
+                  <td>2026-08-31</td>
+                  <td>Public verification scheduling updated to use capacity-routed runners with overflow.</td>
+                </tr>
+                <tr>
+                  <td>2026-08-31</td>
+                  <td>Workspace text policy applied to public prose.</td>
+                </tr>
+                <tr>
+                  <td>2026-08-31</td>
+                  <td>Validated release promoted to the public branch, publishing the finalized specification, the release record, the three schemas, and the golden vector corpus.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Frozen artifact digests</h3>
+          <p>
+            These have not changed since the release promotion and are pinned in three independent
+            places: this repository's verifier, the vector manifest, and the independent Rust
+            verifier's input lock.
+          </p>
+          <div class="scroll-x">
+            <table class="tbl">
+              <thead><tr><th>Artifact</th><th>SHA256</th></tr></thead>
+              <tbody>
+                <tr><td><code>tandem.md</code></td><td><code>caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f</code></td></tr>
+                <tr><td><code>schemas/agreement-envelope.schema.json</code></td><td><code>1d5493758b1cc358b02491b675b9e7cb64c51fe3ce2e3f0cde9669882717faa1</code></td></tr>
+                <tr><td><code>schemas/chapter.schema.json</code></td><td><code>9fa613d576b2aeb95b52140c89180f05f65ecd7f4266797f41a1e685610dfc17</code></td></tr>
+                <tr><td><code>schemas/close.schema.json</code></td><td><code>e6645b4ec1eeb44996a37847d4318168959a905fb334b48f4f3298cc6340bc59</code></td></tr>
+                <tr><td><code>vectors/generated/golden.json</code></td><td><code>fc4bee2c20fe94a66a9849f1dc3d73bc407179474e936de29eddef85dcfb5856</code></td></tr>
+                <tr><td><code>vectors/generated/manifest.json</code></td><td><code>d443d9b6e178b95b707620593e471b2146c2747be0f7789dc06f54ce133c33ac</code></td></tr>
+                <tr><td><code>release/spec.json</code></td><td><code>f07dd12c63995dd4a40e50e6a8a2c7634561184caa9b421e2d4bcdbe5892d332</code></td></tr>
+                <tr><td><code>vectors/create-marker.example.json</code></td><td><code>49ee02bc45526953c8fd2e5e71b35fc73458ce4c33811870119113d194308cc8</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Run <code>node scripts/verify-public.mjs</code> from the repository root to check all of
+            them, along with the specification byte contract and the manifest-to-fixture binding.
+          </p>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="conformance.html">Back: conformance and checklist</a>
+          <a href="protocol.html">Return to the dossier overview</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="../SECURITY.md">Security policy</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

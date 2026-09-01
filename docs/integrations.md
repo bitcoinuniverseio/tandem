@@ -34,7 +34,7 @@ node scripts/verify-public.mjs
 
 ## Chapter and close content
 
-Chapter and close manifests are presentation data. Authoritativeize them using RFC 8785 JCS before hashing when the application constructs a commitment. Retrieve only the exact payload named by `content_sha256` and verify the bytes before display.
+Chapter and close manifests are presentation data. Normalize them with RFC 8785 JCS before hashing when the application constructs a commitment. Retrieve only the exact payload named by `content_sha256` and verify the bytes before display.
 
 Supported URI syntax is constrained by the public schemas. URI availability never changes on-chain validity.
 

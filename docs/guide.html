@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Worked Tandem examples using the repository's own published vectors: decode a marker byte by byte, derive a carrier from a key pair, and follow one object through its whole life."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem guide and worked examples">
+    <meta property="og:description" content="Decode a real Tandem marker byte by byte, derive a carrier from a key pair, and follow one object from CREATE to a terminal state.">
+    <title>Tandem guide and worked examples</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the guide</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="pair-check.html">Pair check</a>
+        <a href="vectors.html">Vectors</a>
+      </nav>
+      <a class="header-link" href="../vectors/generated/golden.json">Golden corpus</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Guide</p>
+      <h1>Worked examples,<br><em>using the published bytes.</em></h1>
+      <p class="dossier-lede">
+        Every number on this page is taken from
+        <a href="../vectors/generated/golden.json">vectors/generated/golden.json</a> in this
+        repository. Nothing here is invented for illustration. If you follow along you will get the
+        same values, and the <a href="pair-check.html">pair check tool</a> will confirm them in
+        your browser.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Guide sections">
+          <p>On this page</p>
+          <a href="#binding">1. Fix a binding</a>
+          <a href="#carrier">2. Build a carrier</a>
+          <a href="#decode">3. Decode a marker</a>
+          <a href="#fees">4. Split a fee</a>
+          <a href="#lifecycle">5. Follow an object</a>
+          <a href="#failure">6. Classify a failure</a>
+          <a href="#content">7. Commit to content</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="binding" aria-labelledby="binding-title">
+          <p class="kicker">Example 1</p>
+          <h2 id="binding-title">Fix a binding and derive its identity</h2>
+          <p class="lede">
+            Nothing in Tandem means anything until you choose a network, an INIT transaction, and a
+            specification digest. The golden corpus fixes one regtest binding, so we will use it.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>The binding used by the published corpus</caption>
+              <thead><tr><th>Input</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td>Network</td><td><code>regtest</code>, code <code>0x03</code></td></tr>
+                <tr><td>Configured INIT txid (display)</td><td><code>1010101010101010101010101010101010101010101010101010101010101010</code></td></tr>
+                <tr><td>Specification digest</td><td><code>caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The specification digest is not a magic constant. It is the SHA256 of
+            <a href="../tandem.md">tandem.md</a> read as raw bytes, with no whitespace or
+            line-ending normalization. Confirm it before you trust anything downstream:
+          </p>
+
+          <div class="code">
+            <span class="code-label">Confirm the specification digest</span>
+            <pre><code>$ sha256sum tandem.md
+caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f  tandem.md</code></pre>
+          </div>
+
+          <p>
+            Now derive the namespace commitment by rule ID-5. The INIT txid must be converted from
+            display order to wire order first, which reverses its 32 bytes exactly once. This
+            particular txid is 32 copies of <code>0x10</code>, so its reversal happens to be
+            identical, which is convenient for a first example and dangerous to generalize from.
+          </p>
+
+          <div class="code">
+            <span class="code-label">Namespace commitment</span>
+            <pre><code>SHA256(
+  "TANDEM/NAMESPACE\0"                                                 <span aria-hidden="true">// 17 bytes</span>
+  || 03                                                                <span aria-hidden="true">// regtest</span>
+  || 1010101010101010101010101010101010101010101010101010101010101010 <span aria-hidden="true">// wire order</span>
+  || caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f
+)
+= 38025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221</code></pre>
+          </div>
+
+          <p>
+            That value appears in the corpus as <code>identity.namespace</code>, and it is also the
+            32 bytes carried in the namespace field of every non-INIT marker in the corpus. Those
+            two facts agreeing is the first real consistency check available to you.
+          </p>
+
+          <p>
+            The object key follows from the namespace and the CREATE transaction, by rule ID-6. The
+            corpus fixes a CREATE txid of 32 copies of <code>0x20</code>:
+          </p>
+
+          <div class="code">
+            <span class="code-label">Object key</span>
+            <pre><code>SHA256(
+  "TANDEM/OBJECT\0"                                                    <span aria-hidden="true">// 14 bytes</span>
+  || 38025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221 <span aria-hidden="true">// namespace</span>
+  || 2020202020202020202020202020202020202020202020202020202020202020 <span aria-hidden="true">// create txid, wire order</span>
+  || 01000000                                                          <span aria-hidden="true">// uint32_le(1)</span>
+)
+= 5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52</code></pre>
+          </div>
+
+          <p>
+            The human-readable form of the same object is
+            <code>tandem:regtest:1010&hellip;1010:2020&hellip;2020:1</code>, but never use it as a
+            key. Ordering, equality, database indexes, and both Merkle trees all use the 32 binary
+            bytes.
+          </p>
+        </section>
+
+        <section id="carrier" aria-labelledby="carrier-title">
+          <p class="kicker">Example 2</p>
+          <h2 id="carrier-title">Build a carrier from two halves</h2>
+          <p class="lede">
+            This is the moment where two independent people become one object. Take two compressed
+            public keys, sort them, and the address is fully determined. There is nothing to
+            negotiate and nothing to configure.
+          </p>
+
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">SIDE A</span> key0</h4>
+              <div class="code"><pre><code>0279be667ef9dcbbac55a0
+6295ce870b07029bfcdb2d
+ce28d959f2815b16f81798</code></pre></div>
+              <p>Lower by unsigned bytewise comparison, so it takes the key0 slot.</p>
+            </div>
+            <div>
+              <h4><span class="side-tag b">SIDE B</span> key1</h4>
+              <div class="code"><pre><code>02c6047f9441ed7d6d3045
+406e95c07cd85c778e4b8c
+ef3ca7abac09b95c709ee5</code></pre></div>
+              <p>Higher by the same comparison, so it takes the key1 slot.</p>
+            </div>
+          </div>
+
+          <p>
+            Sorting is not a convention you may vary. Compare the two 33-byte strings as unsigned
+            bytes, left to right. Here the first bytes tie at <code>0x02</code>, and the second
+            bytes decide: <code>0x79</code> is below <code>0xc6</code>. If you swap the two keys
+            the resulting witness script is different, the P2WSH address is different, and the
+            protocol treats the transaction as bound to the wrong carrier. The failure is
+            <code>BAD_KEY_ORDER_OR_BINDING</code>, code <code>0x0015</code>.
+          </p>
+
+          <div class="code">
+            <span class="code-label">Witness script, exactly 71 bytes</span>
+            <pre><code>52                                                                   <span aria-hidden="true">// OP_2</span>
+21 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798 <span aria-hidden="true">// PUSH33 key0</span>
+21 02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5 <span aria-hidden="true">// PUSH33 key1</span>
+52                                                                   <span aria-hidden="true">// OP_2</span>
+ae                                                                   <span aria-hidden="true">// OP_CHECKMULTISIG</span></code></pre>
+          </div>
+
+          <div class="code">
+            <span class="code-label">Carrier scriptPubKey, exactly 34 bytes</span>
+            <pre><code>SHA256(witnessScript) = 9b984c7bae3efddc3a3f0a20ff81bfe89ed1fe07ff13e562149ee654bed845db
+
+scriptPubKey = 0020 9b984c7bae3efddc3a3f0a20ff81bfe89ed1fe07ff13e562149ee654bed845db</code></pre>
+          </div>
+
+          <p>
+            Both values appear verbatim in the corpus under <code>carrier</code>. Note the hash
+            here is a plain SHA256, not a double SHA256 and not a HASH160. That is the native
+            P2WSH rule, and getting it wrong produces a valid-looking address that no Tandem
+            operation will ever match.
+          </p>
+
+          <div class="note">
+            <strong>Try it with your own keys.</strong>
+            <p>
+              The <a href="pair-check.html#carrier">pair check tool</a> does exactly this
+              derivation in your browser, shows you which side each key landed on, and names the
+              rule behind every check. It never transmits what you paste.
+            </p>
+          </div>
+        </section>
+
+        <section id="decode" aria-labelledby="decode-title">
+          <p class="kicker">Example 3</p>
+          <h2 id="decode-title">Decode a marker byte by byte</h2>
+          <p class="lede">
+            Here is a real MARK marker script from the corpus, taken apart completely. Every byte
+            has a job and there are no spare ones.
+          </p>
+
+          <div class="code">
+            <span class="code-label">MARK marker script, 81 bytes</span>
+            <pre><code>6a4c4e544e444d0103020138025b6fb909d2f22226ee9ea7e3a0e895c589792a
+93393c136ad502c608d221010000000000de2e2206a8bf7075457a777a271a46
+7a26faa75f82ceec3a2ee708c0c732b84a</code></pre>
+          </div>
+
+          <p>The first three bytes are script framing, not payload:</p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Script framing</caption>
+              <thead><tr><th>Bytes</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>6a</code></td><td><code>OP_RETURN</code></td></tr>
+                <tr><td><code>4c</code></td><td><code>OP_PUSHDATA1</code></td></tr>
+                <tr><td><code>4e</code></td><td>Push length 78, the exact MARK payload size</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <code>OP_PUSHDATA1</code> is required here rather than a direct push, because a direct
+            data push only reaches <code>0x4b</code>, which is 75. A 78-byte payload cannot use one,
+            so <code>OP_PUSHDATA1</code> is the minimal encoding and using anything larger would
+            fail rule REC-6 with <code>BAD_MARKER_ENCODING_OR_LENGTH</code>. CREATE and ROTATE, at
+            40 and 44 bytes, are small enough for a direct push and must use one.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>The 78 payload bytes, decoded in full</caption>
+              <thead><tr><th>Range</th><th>Bytes</th><th>Field</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td><code>[0,4)</code></td><td><code>544e444d</code></td><td>magic</td><td><code>TNDM</code></td></tr>
+                <tr><td><code>[4,5)</code></td><td><code>01</code></td><td>marker format</td><td>1, the only defined format</td></tr>
+                <tr><td><code>[5,6)</code></td><td><code>03</code></td><td>network</td><td><code>regtest</code></td></tr>
+                <tr><td><code>[6,7)</code></td><td><code>02</code></td><td>opcode</td><td>MARK</td></tr>
+                <tr><td><code>[7,8)</code></td><td><code>01</code></td><td><code>state_vout</code></td><td>1, the carrier output index</td></tr>
+                <tr><td><code>[8,40)</code></td><td><code>38025b6f&hellip;c608d221</code></td><td>namespace</td><td>matches the derived namespace from example 1</td></tr>
+                <tr><td><code>[40,44)</code></td><td><code>01000000</code></td><td><code>state_seq</code></td><td>1, little-endian</td></tr>
+                <tr><td><code>[44,45)</code></td><td><code>00</code></td><td>kind</td><td>note</td></tr>
+                <tr><td><code>[45,46)</code></td><td><code>00</code></td><td>flags</td><td>must be zero</td></tr>
+                <tr><td><code>[46,78)</code></td><td><code>de2e2206&hellip;c732b84a</code></td><td>chapter commitment</td><td>nonzero, as required</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            A sequence of 1 tells you this MARK is the first operation after the CREATE that
+            produced sequence 0. It is not a claim the marker gets to make on its own: the parser
+            must find an active carrier at sequence 0 and confirm that this transaction consumes it.
+            If no such predecessor exists, the failure is <code>PREDECESSOR_NOT_ACTIVE</code>, code
+            <code>0x001a</code>, and the sequence check at <code>0x001b</code> is never reached.
+          </p>
+
+          <h3>The other four markers, for comparison</h3>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Every marker in the published corpus, with its distinguishing fields</caption>
+              <thead><tr><th>Operation</th><th>Prefix</th><th><code>state_vout</code></th><th><code>state_seq</code></th><th>Trailing fields</th></tr></thead>
+              <tbody>
+                <tr><td>INIT</td><td><code>6a3b</code></td><td>none</td><td>none</td><td><code>H_open</code> 1108, <code>H_close</code> 5428, carrier 20,000, refund delay 52,560, spec hash</td></tr>
+                <tr><td>CREATE</td><td><code>6a28</code></td><td><code>0x01</code></td><td>none</td><td>namespace only</td></tr>
+                <tr><td>MARK</td><td><code>6a4c4e</code></td><td><code>0x01</code></td><td>1</td><td>kind, flags, chapter commitment</td></tr>
+                <tr><td>ROTATE</td><td><code>6a2c</code></td><td><code>0x01</code></td><td>2</td><td>none, successor keys come from the inputs</td></tr>
+                <tr><td>CLOSE</td><td><code>6a4c50</code></td><td><code>0xff</code></td><td>3</td><td>reason 0 (mutual completion), three zero reserved bytes, close commitment</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            CLOSE is the only operation whose <code>state_vout</code> is <code>0xff</code> rather
+            than <code>0x01</code>. That single byte is how the marker declares there is no
+            successor carrier. The INIT payload confirms the founding window arithmetic from rule
+            OP-1: 1108 plus 4,320 is 5,428, and since the INIT lead is 1,008 blocks, this INIT must
+            have confirmed at height 100 or lower.
+          </p>
+        </section>
+
+        <section id="fees" aria-labelledby="fees-title">
+          <p class="kicker">Example 4</p>
+          <h2 id="fees-title">Split a fee between two sides</h2>
+          <p class="lede">
+            Tandem does not let the two participants agree on who pays. The split is arithmetic, so
+            an implementation can check it without knowing anything about the relationship.
+          </p>
+
+          <p>
+            The corpus records a CREATE fee of 3,030 satoshis. Applying the CREATE equations from
+            rule PAIR-3.3:
+          </p>
+
+          <div class="code">
+            <span class="code-label">Even fee, CREATE</span>
+            <pre><code>F  = 3030
+D0 = 10000 + ceil(3030 / 2) = 10000 + 1515 = 11515   <span aria-hidden="true">// side A debit</span>
+D1 = 10000 + floor(3030 / 2) = 10000 + 1515 = 11515  <span aria-hidden="true">// side B debit</span>
+
+D0 + D1 - 20000 = 23030 - 20000 = 3030 = F           <span aria-hidden="true">// closes exactly</span></code></pre>
+          </div>
+
+          <p>
+            An even fee divides cleanly and both sides pay the same. An odd fee is where the
+            tie-break matters. Take a fee of 3,031 on the same CREATE:
+          </p>
+
+          <div class="code">
+            <span class="code-label">Odd fee, CREATE</span>
+            <pre><code>F  = 3031
+D0 = 10000 + ceil(3031 / 2) = 10000 + 1516 = 11516    <span aria-hidden="true">// side A pays the extra satoshi</span>
+D1 = 10000 + floor(3031 / 2) = 10000 + 1515 = 11515
+
+D0 + D1 - 20000 = 23031 - 20000 = 3031 = F</code></pre>
+          </div>
+
+          <p>
+            Side A always absorbs the odd satoshi, on both CREATE and ROTATE. A wallet that gives
+            it to side B instead produces a transaction that fails with
+            <code>BAD_FEE_SPLIT_OR_CHANGE</code>, code <code>0x0019</code>, even though the total
+            fee is correct and both parties consented. The rule exists so that two implementations
+            never round differently and then disagree about validity.
+          </p>
+
+          <p>
+            Note the ordering of the fee checks. Positivity is <code>0x0018</code> and the split is
+            <code>0x0019</code>, so a transaction that both fails to pay a positive fee and
+            misallocates it reports the positivity failure. This matters when you write tests: the
+            reason code you assert must be the lowest failing one, not merely a true one.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Fees recorded by the published corpus for each valid operation</caption>
+              <thead><tr><th>Operation</th><th>Fee, satoshis</th><th>Who pays</th></tr></thead>
+              <tbody>
+                <tr><td>INIT</td><td>1,000</td><td>The single funding input</td></tr>
+                <tr><td>CREATE</td><td>3,030</td><td>Both sides, split by the equations above</td></tr>
+                <tr><td>MARK</td><td>1,000</td><td>One sponsor, who must be side A or side B</td></tr>
+                <tr><td>ROTATE</td><td>1,000</td><td>Both successor sides</td></tr>
+                <tr><td>CLOSE</td><td>1,000</td><td>Taken from the 20,000-satoshi carrier before the equal payout</td></tr>
+                <tr><td>REFUND</td><td>340</td><td>Taken from the carrier the same way</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            MARK is the one operation where a single side can carry the cost. The fee sponsor is
+            one extra P2WPKH input, and its key must equal current key0 or current key1. It cannot
+            be an unrelated third party. Both signatures on the carrier are still required, so
+            paying the fee alone grants no unilateral power.
+          </p>
+        </section>
+
+        <section id="lifecycle" aria-labelledby="lifecycle-title">
+          <p class="kicker">Example 5</p>
+          <h2 id="lifecycle-title">Follow an object from first to last</h2>
+          <p class="lede">
+            The corpus fixes one object snapshot with real values. Here is what each field means as
+            the object moves.
+          </p>
+
+          <figure class="diagram">
+            <svg viewBox="0 0 760 176" role="img" aria-labelledby="lc-title lc-desc">
+              <title id="lc-title">One object across four operations</title>
+              <desc id="lc-desc">
+                A CREATE at height 1108 starts the object at sequence 0 with chapter count 0. A MARK
+                moves it to sequence 1 and chapter count 1, keeping the same pair. A ROTATE moves it
+                to sequence 2 with a new pair and an unchanged chapter count. A CLOSE moves it to
+                sequence 3 and the CLOSED status with no successor.
+              </desc>
+              <g font-family="Inter, ui-sans-serif, sans-serif" font-size="11.5">
+                <line x1="24" y1="70" x2="736" y2="70" stroke="#10120f" stroke-width="2"></line>
+
+                <g>
+                  <circle cx="90" cy="70" r="9" fill="var(--acid)" stroke="#10120f" stroke-width="2"></circle>
+                  <text x="90" y="44" text-anchor="middle" font-weight="700">CREATE</text>
+                  <text x="90" y="96" text-anchor="middle">seq 0</text>
+                  <text x="90" y="112" text-anchor="middle" fill="#7d7d73">height 1108</text>
+                  <text x="90" y="128" text-anchor="middle" fill="#7d7d73">chapters 0</text>
+                  <text x="90" y="150" text-anchor="middle" font-weight="700" fill="var(--side-a)">pair 1</text>
+                </g>
+
+                <g>
+                  <circle cx="285" cy="70" r="9" fill="var(--acid)" stroke="#10120f" stroke-width="2"></circle>
+                  <text x="285" y="44" text-anchor="middle" font-weight="700">MARK</text>
+                  <text x="285" y="96" text-anchor="middle">seq 1</text>
+                  <text x="285" y="112" text-anchor="middle" fill="#7d7d73">height 1200</text>
+                  <text x="285" y="128" text-anchor="middle" fill="#7d7d73">chapters 1</text>
+                  <text x="285" y="150" text-anchor="middle" font-weight="700" fill="var(--side-a)">pair 1</text>
+                </g>
+
+                <g>
+                  <circle cx="480" cy="70" r="9" fill="var(--acid)" stroke="#10120f" stroke-width="2"></circle>
+                  <text x="480" y="44" text-anchor="middle" font-weight="700">ROTATE</text>
+                  <text x="480" y="96" text-anchor="middle">seq 2</text>
+                  <text x="480" y="112" text-anchor="middle" fill="#7d7d73">chapters 1</text>
+                  <text x="480" y="150" text-anchor="middle" font-weight="700" fill="var(--side-b)">pair 2</text>
+                </g>
+
+                <g>
+                  <rect x="655" y="60" width="20" height="20" fill="#10120f"></rect>
+                  <text x="665" y="44" text-anchor="middle" font-weight="700">CLOSE</text>
+                  <text x="665" y="96" text-anchor="middle">seq 3</text>
+                  <text x="665" y="112" text-anchor="middle" fill="#7d7d73">CLOSED</text>
+                  <text x="665" y="128" text-anchor="middle" fill="#7d7d73">no successor</text>
+                  <text x="665" y="150" text-anchor="middle" font-weight="700" fill="var(--side-b)">pair 2</text>
+                </g>
+              </g>
+            </svg>
+            <figcaption>
+              Sequence numbers in this figure are the ones carried by the corpus markers: MARK at 1,
+              ROTATE at 2, CLOSE at 3. The heights are the ones the corpus records for the INIT
+              opening and for the example block.
+            </figcaption>
+          </figure>
+
+          <h3>Reading a snapshot leaf</h3>
+          <p>
+            The corpus publishes an object snapshot for the object we derived in example 1. Its
+            fields decode as follows.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Object-state snapshot from the corpus, decoded</caption>
+              <thead><tr><th>Field</th><th>Value</th><th>What it tells you</th></tr></thead>
+              <tbody>
+                <tr><td><code>object_key</code></td><td><code>5e355bac&hellip;8659cb52</code></td><td>The key derived in example 1</td></tr>
+                <tr><td><code>founding</code></td><td>1</td><td>Created inside the 4,320-block founding window</td></tr>
+                <tr><td><code>status</code></td><td>0</td><td><code>ACTIVE</code></td></tr>
+                <tr><td><code>create_height</code></td><td>1108</td><td>Exactly <code>H_open</code>, the first permitted height</td></tr>
+                <tr><td><code>state_seq</code></td><td>1</td><td>One operation has happened since CREATE</td></tr>
+                <tr><td><code>current_outpoint</code></td><td><code>3030&hellip;3030</code>, vout 1</td><td>The live carrier, so the object is spendable</td></tr>
+                <tr><td><code>key0</code>, <code>key1</code></td><td>The pair from example 2</td><td>Both keys are still required</td></tr>
+                <tr><td><code>terminal_txid</code></td><td><code>zero32</code></td><td>Absent, consistent with an active object</td></tr>
+                <tr><td><code>chapter_count</code></td><td>1</td><td>Exactly one valid MARK so far</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            <code>create_height</code> being exactly 1108 is worth noticing. That is
+            <code>H_open</code> itself, and rule OP-2 uses <code>h &gt;= H_open</code>, so this is
+            the earliest height at which any object could exist under this binding. One block
+            earlier the same transaction would be invalid with <code>BAD_HEIGHT_OR_PHASE</code>.
+          </p>
+
+          <p>
+            The active and terminal fields are mutually exclusive by construction. An active object
+            has a current outpoint and a zero terminal txid. A terminal object has
+            <code>zero36</code> as its current outpoint and a real terminal txid. There is no state
+            where both are populated, and no state where neither is.
+          </p>
+        </section>
+
+        <section id="failure" aria-labelledby="failure-title">
+          <p class="kicker">Example 6</p>
+          <h2 id="failure-title">Classify a failure the way the protocol does</h2>
+          <p class="lede">
+            Getting the verdict right is only half of conformance. You must also select the same
+            reason code, and the selection is ordered.
+          </p>
+
+          <p>
+            Suppose a transaction spends an active carrier, carries a single MARK marker, and has
+            three separate problems: its locktime is 7 instead of 0, its sponsor input reveals a key
+            belonging to neither participant, and its chapter commitment is all zeroes.
+          </p>
+
+          <ol>
+            <li>Dispatch runs first. One marker remains and one carrier is spent, so we take the single-marker branch rather than any of the multiple-marker or markerless paths.</li>
+            <li>Marker structure passes. The push is minimal, the payload is exactly 78 bytes, format is <code>0x01</code>, network matches, opcode is defined, and the namespace matches.</li>
+            <li>Group <code>0x0010</code> is the first failing group: locktime is not 0. That is <code>BAD_TX_VERSION_OR_LOCKTIME</code>.</li>
+          </ol>
+
+          <p>
+            The answer is <code>0x0010</code>. Not <code>0x0015</code> for the sponsor key, and not
+            <code>0x001d</code> for the zero commitment, even though both are genuinely wrong. An
+            implementation that reports either of those is nonconforming, because rule INV-3
+            requires the lowest failing code.
+          </p>
+
+          <p>
+            The consequences do not stop at the reason code. Because a carrier was consumed, the
+            event is class 2, its type is <code>EXITED_NONCANONICAL</code> rather than the attempted
+            MARK, and the object terminates. A reader who only checks that the transaction was
+            rejected would miss that an object died.
+          </p>
+
+          <div class="note warn">
+            <strong>Rejection is not the same as no effect.</strong>
+            <p>
+              An invalid transaction with no carrier spend leaves state untouched. An invalid
+              transaction that consumes a carrier destroys the object it consumed. The distinction
+              is rule ST-2, and it exists because Bitcoin has already spent the output regardless of
+              what Tandem thinks of the spend.
+            </p>
+          </div>
+
+          <h3>Precedence beats numeric order</h3>
+          <p>
+            One case inverts what you might expect. A transaction with two markers and two carriers
+            gets <code>MULTIPLE_MARKERS</code> (<code>0x0001</code>), while a transaction with one
+            marker and two carriers gets <code>MULTIPLE_CARRIERS</code> (<code>0x0020</code>). The
+            numeric order does not decide this, dispatch step order does, and rule INV-2 says so
+            explicitly. In the two-carrier cases both objects terminate and each gets its own
+            terminal event, ordered by binary object key with consecutive <code>sub_index</code>
+            values starting at zero.
+          </p>
+        </section>
+
+        <section id="content" aria-labelledby="content-title">
+          <p class="kicker">Example 7</p>
+          <h2 id="content-title">Commit to content without putting it on chain</h2>
+          <p class="lede">
+            A MARK commits 32 bytes. Those bytes are not the content, and they are not a hash of
+            the content either. They are a hash of a manifest, bound to the exact object and
+            position in its history.
+          </p>
+
+          <div class="code">
+            <span class="code-label">Expected chapter commitment</span>
+            <pre><code>SHA256(
+  "TANDEM/CHAPTER\0" ||     <span aria-hidden="true">// 15 bytes</span>
+  namespace_commitment ||
+  genesis_outpoint36 ||     <span aria-hidden="true">// the object's CREATE outpoint</span>
+  predecessor_outpoint36 || <span aria-hidden="true">// the carrier this MARK consumes</span>
+  state_seq_u32le ||
+  kind_u8 ||
+  manifest_sha256
+)</code></pre>
+          </div>
+
+          <p>
+            Because the object, the exact predecessor, the sequence, and the kind are all inside the
+            preimage, the same manifest committed at a different point in the same object's history
+            produces a different commitment. A commitment cannot be lifted from one object and
+            replayed into another.
+          </p>
+
+          <p>
+            CLOSE has the parallel construction with the <code>TANDEM/CLOSE\0</code> domain, the
+            close reason in place of the kind, and one extra allowance: a CLOSE commitment may be
+            all zeroes, which means no close manifest. A MARK commitment may not, which is rule
+            <code>BAD_COMMITMENT</code>, code <code>0x001d</code>.
+          </p>
+
+          <div class="note">
+            <strong>Availability is never validity.</strong>
+            <p>
+              A MARK is protocol-valid when its on-chain commitment is nonzero, even if no manifest
+              is available anywhere or a supplied manifest does not match. Manifest matching is a
+              presentation result. It never changes an on-chain event's validity or the object's
+              state. Treat a missing or mismatched manifest as a display problem, not a consensus
+              one, and never let it change what you report about the chain.
+            </p>
+          </div>
+
+          <p>
+            The manifest itself is ordinary JSON, constrained by
+            <a href="schemas.html">the published schemas</a>. Normalize it with RFC 8785 JCS
+            before hashing so that two implementations producing semantically identical manifests
+            produce identical <code>manifest_sha256</code> values.
+          </p>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="specification.html">Back: normative specification</a>
+          <a href="pair-check.html">Next: pair check tool</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="vectors.html">Test vectors</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

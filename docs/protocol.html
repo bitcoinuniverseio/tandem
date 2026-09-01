@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="The Tandem protocol dossier: a two-sided Bitcoin commitment primitive where a record only becomes valid when both halves of a pair are present."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem protocol dossier">
+    <meta property="og:description" content="Two halves, one record. The complete public specification, vectors, schemas, and independent verifier for the Tandem Bitcoin protocol.">
+    <title>Tandem protocol dossier</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the dossier</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="specification.html">Specification</a>
+        <a href="guide.html">Guide</a>
+        <a href="pair-check.html">Pair check</a>
+        <a href="verifier.html">Verifier</a>
+      </nav>
+      <a class="header-link" href="index.html">Product docs</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Protocol dossier</p>
+      <h1>A record that means nothing<br><em>until its other half lands.</em></h1>
+      <p class="dossier-lede">
+        Tandem is an original Bitcoin Universe protocol. It defines one on-chain object whose
+        every state change requires a matched pair of authorizations. Half a pair is not a
+        weaker version of the record. It is not a record at all.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Dossier sections">
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <hr>
+          <p>Reference</p>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+          <hr>
+          <p>Elsewhere</p>
+          <a href="index.html">Product documentation</a>
+          <a href="../tandem.md">Raw specification bytes</a>
+          <a href="../index.html">Tandem home</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="idea" aria-labelledby="idea-title">
+          <p class="kicker">In plain language</p>
+          <h2 id="idea-title">Two halves, one record</h2>
+          <p class="lede">
+            Most Bitcoin metaprotocols let one holder move one thing. Tandem does not. A Tandem
+            object lives in a Bitcoin output that can only be spent when two specific keys both
+            sign. The protocol layer then insists that the spend has the exact shape of one of
+            five defined operations. Miss either requirement and there is no Tandem record.
+          </p>
+
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">SIDE A</span> The first half</h4>
+              <p>
+                One participant key. It authorizes an input, receives an output, and is committed
+                to by the carrier script. On its own it can do nothing to the object.
+              </p>
+            </div>
+            <div>
+              <h4><span class="side-tag b">SIDE B</span> The second half</h4>
+              <p>
+                The counterpart key. Sorted after side A by raw byte order, so the pair has one
+                unambiguous written form. On its own it can do nothing to the object either.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            The pairing requirement is not a policy that some service enforces. It is the shape of
+            the Bitcoin output itself: an exact 71-byte 2-of-2 witness script, wrapped in native
+            P2WSH. Bitcoin consensus refuses an unmatched spend before any Tandem software is
+            consulted. Tandem then adds a second, stricter layer on top: even a correctly signed
+            2-of-2 spend produces no valid Tandem state unless the whole transaction matches an
+            exact template.
+          </p>
+
+          <figure class="diagram">
+            <svg viewBox="0 0 760 300" role="img" aria-labelledby="sig-title sig-desc">
+              <title id="sig-title">An unmatched commitment beside a matched pair</title>
+              <desc id="sig-desc">
+                On the left, a commitment carrying only side A sits inert: the carrier output is
+                never spent and object state does not change. On the right, side A and side B are
+                both present, the carrier is consumed, and the object advances to the next state
+                sequence.
+              </desc>
+              <g font-family="Inter, ui-sans-serif, sans-serif" font-size="13">
+                <!-- divider seam -->
+                <line x1="380" y1="10" x2="380" y2="290" stroke="#10120f" stroke-width="2" stroke-dasharray="6 6"></line>
+
+                <!-- LEFT: unmatched -->
+                <text x="24" y="28" font-size="12" font-weight="700" letter-spacing="1.4" fill="#7d7d73">UNMATCHED</text>
+
+                <rect x="24" y="44" width="150" height="52" fill="var(--side-a-wash)" stroke="var(--side-a)" stroke-width="2"></rect>
+                <text x="99" y="68" text-anchor="middle" font-weight="700" fill="var(--side-a)">SIDE A</text>
+                <text x="99" y="85" text-anchor="middle" font-size="11.5" fill="var(--side-a)">signature present</text>
+
+                <rect x="196" y="44" width="150" height="52" fill="#e7e5db" stroke="#7d7d73" stroke-width="2" stroke-dasharray="5 4"></rect>
+                <text x="271" y="68" text-anchor="middle" font-weight="700" fill="#7d7d73">SIDE B</text>
+                <text x="271" y="85" text-anchor="middle" font-size="11.5" fill="#7d7d73">absent</text>
+
+                <path d="M185 122 L185 140" stroke="#7d7d73" stroke-width="2" stroke-dasharray="5 4"></path>
+
+                <rect x="24" y="150" width="322" height="60" fill="#e7e5db" stroke="#7d7d73" stroke-width="2" stroke-dasharray="5 4"></rect>
+                <text x="185" y="175" text-anchor="middle" font-weight="700" fill="#7d7d73">Carrier not spent</text>
+                <text x="185" y="194" text-anchor="middle" font-size="11.5" fill="#7d7d73">no transaction, no event, no state delta</text>
+
+                <rect x="24" y="228" width="322" height="52" fill="none" stroke="#7d7d73" stroke-width="2" stroke-dasharray="5 4"></rect>
+                <text x="185" y="250" text-anchor="middle" font-weight="700" fill="#7d7d73">Object stays at sequence n</text>
+                <text x="185" y="268" text-anchor="middle" font-size="11.5" fill="#7d7d73">the half-record is inert, not pending</text>
+
+                <!-- RIGHT: matched -->
+                <text x="412" y="28" font-size="12" font-weight="700" letter-spacing="1.4" fill="#10120f">MATCHED PAIR</text>
+
+                <rect x="412" y="44" width="150" height="52" fill="var(--side-a-wash)" stroke="var(--side-a)" stroke-width="2"></rect>
+                <text x="487" y="68" text-anchor="middle" font-weight="700" fill="var(--side-a)">SIDE A</text>
+                <text x="487" y="85" text-anchor="middle" font-size="11.5" fill="var(--side-a)">signature present</text>
+
+                <rect x="584" y="44" width="150" height="52" fill="var(--side-b-wash)" stroke="var(--side-b)" stroke-width="2"></rect>
+                <text x="659" y="68" text-anchor="middle" font-weight="700" fill="var(--side-b)">SIDE B</text>
+                <text x="659" y="85" text-anchor="middle" font-size="11.5" fill="var(--side-b)">signature present</text>
+
+                <path d="M487 96 L487 118 L573 118" stroke="var(--side-a)" stroke-width="2" fill="none"></path>
+                <path d="M659 96 L659 118 L573 118" stroke="var(--side-b)" stroke-width="2" fill="none"></path>
+                <path d="M573 118 L573 140" stroke="#10120f" stroke-width="2"></path>
+                <path d="M573 148 l-5 -9 l10 0 z" fill="#10120f"></path>
+
+                <rect x="412" y="150" width="322" height="60" fill="var(--paper-bright)" stroke="#10120f" stroke-width="2"></rect>
+                <text x="573" y="175" text-anchor="middle" font-weight="700">Carrier consumed</text>
+                <text x="573" y="194" text-anchor="middle" font-size="11.5">one marker, one exact operation shape</text>
+
+                <path d="M573 210 L573 222" stroke="#10120f" stroke-width="2"></path>
+                <path d="M573 228 l-5 -9 l10 0 z" fill="#10120f"></path>
+
+                <rect x="412" y="228" width="322" height="52" fill="var(--acid)" stroke="#10120f" stroke-width="2"></rect>
+                <text x="573" y="250" text-anchor="middle" font-weight="700">Object advances to sequence n+1</text>
+                <text x="573" y="268" text-anchor="middle" font-size="11.5">valid event, class VALID_OPERATION, reason VALID</text>
+              </g>
+            </svg>
+            <figcaption>
+              The whole protocol in one picture. There is no partially valid Tandem record and no
+              queue of half-signed commitments waiting to complete. Until both halves sign the
+              same exact transaction, the carrier output is simply unspent and the object has not
+              moved.
+            </figcaption>
+            <p class="legend">
+              <span><i class="a" aria-hidden="true"></i> Side A, the lower-sorted key</span>
+              <span><i class="b" aria-hidden="true"></i> Side B, the higher-sorted key</span>
+              <span><i class="inert" aria-hidden="true"></i> Inert, no protocol effect</span>
+            </p>
+          </figure>
+        </section>
+
+        <section id="pairs" aria-labelledby="pairs-title">
+          <p class="kicker">Where pairing appears</p>
+          <h2 id="pairs-title">Five places a pair must match</h2>
+          <p>
+            Pairing is not one rule. It runs through the entire protocol, and each appearance has
+            its own failure code. This is the quickest way to understand what Tandem actually
+            enforces.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Every pairing requirement, and the stable reason emitted when it fails</caption>
+              <thead>
+                <tr><th>Pairing</th><th>Requirement</th><th>Reason on failure</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Key pair</td>
+                  <td>Two valid, distinct, compressed secp256k1 keys with <code>key0 &lt; key1</code> by unsigned bytewise order</td>
+                  <td><code>BAD_KEY_ORDER_OR_BINDING</code> (<code>0x0015</code>)</td>
+                </tr>
+                <tr>
+                  <td>Signature pair</td>
+                  <td>Four witness elements: empty, signature for key0, signature for key1, witness script, in that order</td>
+                  <td><code>BAD_SIGNATURE_OR_SIGHASH</code> (<code>0x0016</code>)</td>
+                </tr>
+                <tr>
+                  <td>Predecessor and successor</td>
+                  <td>The marker <code>state_seq</code> is exactly the consumed carrier's sequence plus one</td>
+                  <td><code>BAD_STATE_SEQUENCE</code> (<code>0x001b</code>)</td>
+                </tr>
+                <tr>
+                  <td>Carrier continuity</td>
+                  <td>MARK reproduces the predecessor carrier script byte for byte; ROTATE derives the successor carrier from the new pair</td>
+                  <td><code>BAD_SUCCESSOR</code> (<code>0x001c</code>)</td>
+                </tr>
+                <tr>
+                  <td>Payout pair</td>
+                  <td>CLOSE and REFUND pay key0 and key1 exactly equal, strictly positive amounts</td>
+                  <td><code>BAD_FEE_SPLIT_OR_CHANGE</code> (<code>0x0019</code>)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The last row is worth pausing on. A cooperative ending does not let one side take more
+            than the other. The exit is symmetric by rule, not by agreement, so neither participant
+            has to trust the other's arithmetic at the moment the object ends.
+          </p>
+        </section>
+
+        <section id="shape" aria-labelledby="shape-title">
+          <p class="kicker">The object</p>
+          <h2 id="shape-title">One carrier, five operations, three endings</h2>
+          <p>
+            An active Tandem object is exactly one unspent output, called the carrier: 20,000
+            satoshis at a native P2WSH address derived from the current key pair. Every operation
+            consumes that carrier and, unless it is terminal, produces the next one.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>The five operations plus the markerless recovery path</caption>
+              <thead>
+                <tr><th>Operation</th><th>Opcode</th><th>Inputs</th><th>Outputs</th><th>Effect on the object</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>INIT</td><td><code>0x00</code></td><td>1</td><td>2</td><td>Activates one protocol identifier. Creates no object.</td></tr>
+                <tr><td>CREATE</td><td><code>0x01</code></td><td>2</td><td>4</td><td>Object begins ACTIVE at sequence 0.</td></tr>
+                <tr><td>MARK</td><td><code>0x02</code></td><td>2</td><td>3</td><td>Sequence plus one, chapter count plus one, keys unchanged.</td></tr>
+                <tr><td>ROTATE</td><td><code>0x03</code></td><td>3</td><td>4</td><td>Sequence plus one, keys replaced, chapter count unchanged.</td></tr>
+                <tr><td>CLOSE</td><td><code>0x04</code></td><td>1</td><td>3</td><td>Sequence plus one, status CLOSED, no successor.</td></tr>
+                <tr><td>REFUND</td><td>no marker</td><td>1</td><td>2</td><td>Sequence unchanged, status REFUNDED, no successor.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            There is also a fourth outcome nobody chooses. If a confirmed transaction consumes an
+            active carrier but fails to validate as one of these operations, the object terminates
+            as <code>EXITED_NONCANONICAL</code>. The spend cannot be ignored, because the output it
+            depended on no longer exists. Tandem never combines, splits, or forks an object.
+          </p>
+
+          <div class="note">
+            <strong>No market exists for Tandem.</strong>
+            <p>
+              The Bitcoin Universe capability snapshot records 38 protocols, 29 of which have a
+              marketplace entry. Tandem is not among the 38. No Universe product implements a
+              buy, sell, list, or transfer path for a Tandem object, and this repository does not
+              describe one. Tandem defines shared control and a history, not a tradable asset.
+            </p>
+          </div>
+        </section>
+
+        <section id="trust" aria-labelledby="trust-title">
+          <p class="kicker">Why you can check this yourself</p>
+          <h2 id="trust-title">Two implementations, two languages, one answer</h2>
+          <p>
+            A deterministic protocol is only as trustworthy as your ability to disagree with its
+            author. Tandem is implemented twice, independently, in two different languages, and
+            the two implementations share nothing but frozen bytes.
+          </p>
+
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">PIPELINE A</span> TypeScript indexer</h4>
+              <p>
+                <a href="https://github.com/bitcoinuniverseio/index-tandem">bitcoinuniverseio/index-tandem</a>
+                resolves Bitcoin data, classifies transactions, and serves object state over HTTP.
+              </p>
+            </div>
+            <div>
+              <h4><span class="side-tag b">PIPELINE B</span> Rust verifier</h4>
+              <p>
+                <a href="https://github.com/bitcoinuniverseio/tandem-verifier-rs">bitcoinuniverseio/tandem-verifier-rs</a>
+                reimplements the parser, reducer, and roots in Rust and refuses to import
+                pipeline A at all.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            The two pipelines never read each other's output. They agree, or fail to agree, only by
+            publishing signed tuples for the same block height and comparing them. That
+            comparison is the real trust property, and
+            <a href="verifier.html">the verifier page</a> explains exactly what it does and does
+            not prove.
+          </p>
+        </section>
+
+        <section id="read" aria-labelledby="read-title">
+          <p class="kicker">Where to go next</p>
+          <h2 id="read-title">The rest of the dossier</h2>
+          <div class="card-grid">
+            <a href="specification.html"><strong>Normative specification</strong><small>Numbered rules for record format, pairing, state transitions, and every validity and invalidity condition.</small></a>
+            <a href="guide.html"><strong>Guide and worked examples</strong><small>Decode a real marker byte by byte and walk a complete object lifecycle.</small></a>
+            <a href="pair-check.html"><strong>Pair check tool</strong><small>Paste two candidate halves and watch each rule pass or fail, entirely in your browser.</small></a>
+            <a href="indexing.html"><strong>Indexer semantics</strong><small>Confirmation provenance, reorganization behaviour, and why the mempool never counts.</small></a>
+            <a href="schemas.html"><strong>JSON Schema reference</strong><small>All three published schemas, field by field, with the constraints spelled out.</small></a>
+            <a href="vectors.html"><strong>Test vectors</strong><small>The repository's own golden corpus, including every root you can recompute.</small></a>
+            <a href="verifier.html"><strong>Independent verifier</strong><small>The Rust implementation, what it checks, and the limits of what agreement proves.</small></a>
+            <a href="conformance.html"><strong>Conformance and checklist</strong><small>What an implementation must do to claim conformance, in order.</small></a>
+            <a href="considerations.html"><strong>Security, limits, changelog</strong><small>Honest limitations, threat notes, and the record of what has changed.</small></a>
+          </div>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="index.html">Product documentation</a>
+          <a href="specification.html">Next: normative specification</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="index.html">Product documentation</a>
+        <a href="specification.html">Specification</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

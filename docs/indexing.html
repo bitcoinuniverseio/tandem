@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Tandem indexer semantics: confirmation provenance, block connection and disconnection, reorganization behaviour, and why mempool observations never reach protocol state."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem indexer semantics">
+    <meta property="og:description" content="How a Tandem indexer must treat confirmation, reorganization, and the mempool, and what the reference indexer implements today.">
+    <title>Tandem indexer semantics</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the reference</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="verifier.html">Verifier</a>
+        <a href="conformance.html">Conformance</a>
+      </nav>
+      <a class="header-link" href="https://github.com/bitcoinuniverseio/index-tandem">Indexer repository</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Reference</p>
+      <h1>Indexer semantics</h1>
+      <p class="dossier-lede">
+        Tandem state is a pure function of confirmed blocks. That sentence carries more weight than
+        it first appears to: it decides how confirmation works, what a reorganization must undo,
+        and why an unconfirmed transaction can never be a Tandem record, only a guess about one.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Reference sections">
+          <p>On this page</p>
+          <a href="#scope">1. Block scope</a>
+          <a href="#confirmation">2. Confirmation</a>
+          <a href="#connect">3. Connecting a block</a>
+          <a href="#reorg">4. Reorganization</a>
+          <a href="#mempool">5. Mempool</a>
+          <a href="#agreement">6. Two-pipeline agreement</a>
+          <a href="#reference">7. The reference indexer</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="scope" aria-labelledby="scope-title">
+          <p class="kicker">Where history starts</p>
+          <h2 id="scope-title">1. Block scope</h2>
+          <p class="lede">
+            An indexer does not scan the chain for Tandem activity. It is told exactly one INIT
+            txid, finds it, and only then has a history to index at all.
+          </p>
+
+          <p>
+            The configured INIT transaction is located by exact txid on the active chain. Blocks
+            before its confirmation block are outside this namespace's rooted history and are never
+            examined for Tandem content.
+          </p>
+
+          <p>
+            When the configured txid confirms, an indexer first validates that transaction as the
+            configured INIT. If it is valid, its payload supplies <code>H_open</code> and
+            <code>H_close</code>, and the indexer then classifies every transaction in that block in
+            transaction-index order, including transactions positioned before and after the INIT
+            itself. The configured transaction is classified as INIT. No CREATE in that block can be
+            valid, because the 1,008-block INIT lead places <code>H_open</code> at least that far
+            later.
+          </p>
+
+          <div class="note warn">
+            <strong>An invalid INIT is not a retry.</strong>
+            <p>
+              If the configured transaction is invalid, the indexer records its deterministic
+              invalid event, sets the protocol identifier to <code>FAILED_INIT</code>, and
+              classifies no other transaction under this namespace while that invalid INIT remains
+              on the active chain. It still computes roots from the INIT block onward, with an empty
+              object set and zero counters, and later blocks have empty event sets. A
+              reorganization that disconnects the configured transaction rolls this back; if the
+              same txid later confirms on the new branch, validation starts again with its new
+              confirmation context.
+            </p>
+          </div>
+
+          <p>
+            There is no fallback and no discovery. If the configured INIT never confirms, this
+            protocol identifier simply never activates, and no amount of Tandem-shaped traffic on
+            the chain changes that.
+          </p>
+        </section>
+
+        <section id="confirmation" aria-labelledby="confirmation-title">
+          <p class="kicker">The strongest rule on this page</p>
+          <h2 id="confirmation-title">2. Confirmation</h2>
+          <p class="lede">
+            Tandem does not have a confirmation depth. It has a confirmation predicate, and the
+            predicate is stricter than the usual one.
+          </p>
+
+          <div class="rule">
+            <span class="rule-id">Confirmation provenance</span>
+            <p>
+              Every predecessor carrier and every noncarrier funding input required by a valid
+              operation MUST have been confirmed in a block strictly earlier than the block
+              containing the operation.
+              <span class="rule-src">tandem.md section 5.3</span>
+            </p>
+          </div>
+
+          <p>
+            Read that again with the word <em>strictly</em> in mind. A prevout created earlier in
+            the same block fails. It is confirmed by any ordinary definition, it appears at a lower
+            transaction index, and Bitcoin consensus is perfectly happy with the spend. Tandem still
+            rejects it, with <code>UNCONFIRMED_OR_SAME_BLOCK_PREVOUT</code>, code <code>0x0013</code>.
+          </p>
+
+          <p>
+            The reason is determinism under partial views. If same-block chaining were permitted, an
+            indexer would have to model intra-block UTXO creation to decide validity, and any
+            difference in how two implementations ordered or batched that work could produce
+            different answers. Requiring an earlier block means the predecessor set for a block is
+            fully determined before the block is opened.
+          </p>
+
+          <figure class="diagram">
+            <svg viewBox="0 0 760 200" role="img" aria-labelledby="conf-title conf-desc">
+              <title id="conf-title">Same-block chaining is rejected</title>
+              <desc id="conf-desc">
+                In block n, a funding transaction creates an output which a Tandem operation in the
+                same block tries to spend. That operation is rejected. In block n plus one, the same
+                operation spending the same output is accepted, because the funding output was
+                confirmed in a strictly earlier block.
+              </desc>
+              <g font-family="Inter, ui-sans-serif, sans-serif" font-size="12">
+                <rect x="24" y="26" width="330" height="148" fill="var(--paper-bright)" stroke="#10120f" stroke-width="2"></rect>
+                <text x="40" y="50" font-weight="700">Block n</text>
+                <rect x="44" y="64" width="130" height="40" fill="var(--side-a-wash)" stroke="var(--side-a)" stroke-width="2"></rect>
+                <text x="109" y="88" text-anchor="middle" font-size="11.5" fill="var(--side-a)">funding tx, index 3</text>
+                <rect x="200" y="64" width="130" height="40" fill="#e7e5db" stroke="#7d7d73" stroke-width="2" stroke-dasharray="5 4"></rect>
+                <text x="265" y="88" text-anchor="middle" font-size="11.5" fill="#7d7d73">operation, index 7</text>
+                <path d="M174 84 L192 84" stroke="#7d7d73" stroke-width="2" stroke-dasharray="4 3"></path>
+                <text x="189" y="134" text-anchor="middle" font-weight="700" fill="var(--side-a)">REJECTED</text>
+                <text x="189" y="152" text-anchor="middle" font-size="11" fill="#7d7d73">UNCONFIRMED_OR_SAME_BLOCK_PREVOUT</text>
+
+                <rect x="406" y="26" width="330" height="148" fill="var(--paper-bright)" stroke="#10120f" stroke-width="2"></rect>
+                <text x="422" y="50" font-weight="700">Block n, then block n + 1</text>
+                <rect x="426" y="64" width="130" height="40" fill="var(--side-a-wash)" stroke="var(--side-a)" stroke-width="2"></rect>
+                <text x="491" y="88" text-anchor="middle" font-size="11.5" fill="var(--side-a)">funding tx, block n</text>
+                <rect x="582" y="64" width="130" height="40" fill="var(--side-b-wash)" stroke="var(--side-b)" stroke-width="2"></rect>
+                <text x="647" y="88" text-anchor="middle" font-size="11.5" fill="var(--side-b)">operation, block n+1</text>
+                <path d="M556 84 L574 84" stroke="#10120f" stroke-width="2"></path>
+                <path d="M578 84 l-7 -4 l0 8 z" fill="#10120f"></path>
+                <text x="571" y="134" text-anchor="middle" font-weight="700">ACCEPTED</text>
+                <text x="571" y="152" text-anchor="middle" font-size="11" fill="#7d7d73">provenance established</text>
+              </g>
+            </svg>
+            <figcaption>
+              The only difference between the two sides is a block boundary. Nothing about the
+              transactions themselves changed.
+            </figcaption>
+          </figure>
+
+          <p>
+            Three further consequences follow. Mempool presence never establishes provenance.
+            First-seen time never establishes provenance. Transaction arrival order never
+            establishes provenance. An indexer that leans on any of the three will eventually
+            disagree with one that does not.
+          </p>
+
+          <p>
+            REFUND adds a second, separate timing rule. Its input sequence must be exactly decimal
+            52,560 with the BIP68 disable and type flags clear, and Bitcoin consensus
+            relative-locktime rules must consider the input mature in the containing block. The
+            delay is measured from the confirmation height of the exact carrier being spent, so
+            every confirmed MARK or ROTATE replaces the carrier and restarts the clock. A pair that
+            keeps adding chapters keeps pushing their own recovery path further away.
+          </p>
+        </section>
+
+        <section id="connect" aria-labelledby="connect-title">
+          <p class="kicker">The block loop</p>
+          <h2 id="connect-title">3. Connecting a block</h2>
+          <p>
+            Connecting a block is a fixed sequence, and every step is required to be atomic with
+            respect to the others.
+          </p>
+          <ol>
+            <li>Apply transactions in transaction-index order, zero-based and including the coinbase.</li>
+            <li>For each transaction, run the dispatch in rule INV-1 against active object state as it exists immediately before that transaction.</li>
+            <li>Record every emitted event.</li>
+            <li>Apply each event's exact state delta.</li>
+            <li>Compute the event root over this block's event leaves.</li>
+            <li>Compute the object-state root over every surviving object's snapshot leaf.</li>
+            <li>Compute the three post-block counters.</li>
+            <li>Compute the chained block root from the previous chained root and the values above.</li>
+          </ol>
+
+          <p>
+            Event ordering inside a block is by the tuple
+            <code>(tx_index, event_index, sub_index)</code>. For exactly one remaining marker,
+            <code>event_index</code> is that marker's actual vout. For multiple markers it is the
+            lowest candidate vout. For an event with no marker, including a missing configured INIT
+            marker, a REFUND, or a markerless exit, it is <code>0xffffffff</code>.
+            <code>sub_index</code> is zero for an ordinary single event; when one transaction
+            consumes several active carriers, each consumed object gets its own terminal event,
+            ordered by unsigned lexicographic binary object key with consecutive
+            <code>sub_index</code> values starting at zero.
+          </p>
+
+          <div class="note">
+            <strong>A block with no Tandem activity is still a block.</strong>
+            <p>
+              Every block from the INIT confirmation block onward contributes a chained root, even
+              when its event set is empty. The empty event root is
+              <code>SHA256("TANDEM/EVENT-EMPTY\0" || namespace_commitment)</code>. Skipping empty
+              blocks produces a different chained root and therefore permanent disagreement with a
+              conforming implementation.
+            </p>
+          </div>
+        </section>
+
+        <section id="reorg" aria-labelledby="reorg-title">
+          <p class="kicker">Undoing history</p>
+          <h2 id="reorg-title">4. Reorganization</h2>
+          <p class="lede">
+            Tandem state is derived, so a reorganization is not a special case to be patched
+            around. It is the ordinary case run backwards.
+          </p>
+
+          <p>
+            Disconnecting a block reverses its state mutations and its roots in exact reverse order,
+            and this must complete before any replacement branch is applied. Partially applying a
+            new branch over a partially rolled back old one is the single most likely way to produce
+            state that no other implementation will ever reproduce.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>What a reorganization can change</caption>
+              <thead><tr><th>Value</th><th>Can change</th><th>Why</th></tr></thead>
+              <tbody>
+                <tr><td>INIT validity</td><td>Yes</td><td>The configured txid may be removed from the active chain, or confirm at a different height with a different lead</td></tr>
+                <tr><td>CREATE founding status</td><td>Yes</td><td>Founding depends only on confirmation height, and height can change</td></tr>
+                <tr><td>Active outpoints</td><td>Yes</td><td>A disconnected operation returns its predecessor carrier to active status</td></tr>
+                <tr><td>Terminal status</td><td>Yes</td><td>A terminal object becomes active again if the spend that terminated it is removed</td></tr>
+                <tr><td>All three counters</td><td>Yes</td><td>They are post-block values derived from the surviving object set</td></tr>
+                <tr><td>Every subsequent chained root</td><td>Yes</td><td>Each root feeds the next, so one changed block invalidates the whole tail</td></tr>
+                <tr><td>An object's genesis outpoint</td><td>No, while it exists</td><td>It is permanently the CREATE outpoint; a reorganization removes the object rather than repointing it</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The specification is explicit that results depend only on the configured binding, the
+            bytes of the specification, and the blocks on the active chain. Arrival time, API
+            ordering, cache contents, content availability, and any other implementation's parsed
+            output have no role. That is what makes rollback safe to reason about: there is no
+            hidden state to restore, only derived state to recompute.
+          </p>
+
+          <p>
+            Tandem defines no reorganization depth limit. In practice a deployment has a natural
+            floor, because blocks before the configured INIT block are outside the namespace and
+            there is nothing there to roll back to. Rolling back past that point is not a deeper
+            reorganization, it is the end of this protocol identifier's history.
+          </p>
+        </section>
+
+        <section id="mempool" aria-labelledby="mempool-title">
+          <p class="kicker">The part people get wrong</p>
+          <h2 id="mempool-title">5. Mempool</h2>
+          <p class="lede">
+            There is no such thing as an unconfirmed Tandem record. The specification says
+            mempool transactions never change protocol state or counters, and roots use confirmed
+            state only.
+          </p>
+
+          <p>
+            This is stronger than a caching policy. An unconfirmed transaction cannot be evaluated
+            against the Tandem rules at all, because two of them depend on information that only a
+            block provides:
+          </p>
+
+          <ul>
+            <li>Confirmation provenance requires the containing block's height, in order to test that every required prevout confirmed strictly earlier.</li>
+            <li>REFUND maturity requires the containing block, because relative locktime is evaluated against it.</li>
+          </ul>
+
+          <p>
+            A third dependency is subtler. The dispatch in rule INV-1 joins input prevouts against
+            active object state <em>as it exists immediately before this transaction in block
+            transaction order</em>. Outside a block there is no such order, so there is no
+            well-defined predecessor state to join against.
+          </p>
+
+          <div class="note warn">
+            <strong>If you surface mempool observations, label them as observations.</strong>
+            <p>
+              A product may reasonably want to show a user that a transaction they just broadcast
+              has been seen. That is a user-interface courtesy, not protocol state. Keep it in its
+              own storage, keep it out of every root and counter, and never let it satisfy a
+              precondition for constructing the next operation. An implementation that lets a
+              mempool sighting stand in for a confirmed predecessor will build transactions that
+              fail confirmation provenance the moment they are mined.
+            </p>
+          </div>
+
+          <p>
+            A useful discipline is structural rather than procedural: give mempool observations a
+            separate table with no foreign key into protocol state, expose them only on routes that
+            are named as unconfirmed, and never touch that table during a reorganization rollback.
+            Then a mistake in the mempool path cannot corrupt derived state, because there is no
+            path from one to the other.
+          </p>
+        </section>
+
+        <section id="agreement" aria-labelledby="agreement-title">
+          <p class="kicker">Comparing two views</p>
+          <h2 id="agreement-title">6. Two-pipeline agreement</h2>
+          <p>
+            Because the whole state at a height compresses to a chained root, two implementations
+            can compare their entire view in a fixed-size signed message. That message is the
+            agreement envelope, and its shape is published in this repository as
+            <a href="../schemas/agreement-envelope.schema.json">schemas/agreement-envelope.schema.json</a>.
+          </p>
+
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">SEMANTIC FIELDS</span> must match</h4>
+              <ul>
+                <li><code>protocol_id</code></li>
+                <li><code>height</code></li>
+                <li><code>block_hash</code></li>
+                <li><code>event_root</code></li>
+                <li><code>object_state_root</code></li>
+                <li><code>chained_root</code></li>
+                <li><code>founding_created</code></li>
+                <li><code>all_objects</code></li>
+                <li><code>active_objects</code></li>
+              </ul>
+            </div>
+            <div>
+              <h4><span class="side-tag b">RELEASE FIELDS</span> must not</h4>
+              <ul>
+                <li><code>parser_commit</code></li>
+                <li><code>indexer_commit</code></li>
+                <li><code>parser_binary_sha256</code></li>
+                <li><code>indexer_binary_sha256</code></li>
+              </ul>
+              <p>
+                These identify which build produced the tuple. Two genuinely independent
+                implementations are <em>expected</em> to differ here. Requiring them to match would
+                defeat the entire point.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            The signature covers the RFC 8785 JCS serialization of the <code>tuple</code>
+            object only. The envelope fields around it, including <code>key_id</code>, are not
+            signed. A consumer must therefore treat <code>key_id</code> as a hint about which key to
+            try, never as an authenticated claim, and must resolve signer authorization through its
+            own trust policy. Schema validity and signer authorization are separate decisions.
+          </p>
+
+          <p>
+            The useful posture for a product is to fail closed. If two authorized pipelines do not
+            agree at a height, do not present state for that height and do not let a user construct
+            a state-changing transaction against it. Disagreement is exactly the condition the whole
+            arrangement exists to detect, so treating it as a transient error defeats it.
+          </p>
+
+          <p>
+            When a real mismatch happens, compare in a fixed order: event root first, then
+            object-state root, then the counters, then the chained root. The first one that differs
+            localizes the divergence, and the chained root differing while all three components
+            match points at the chaining input rather than at this block's content.
+          </p>
+        </section>
+
+        <section id="reference" aria-labelledby="reference-title">
+          <p class="kicker">Implementations</p>
+          <h2 id="reference-title">7. The reference indexer</h2>
+          <p class="lede">
+            Two public repositories implement the semantics above. Neither is a released product,
+            and describing them as one would be wrong.
+          </p>
+
+          <div class="card-grid">
+            <a href="https://github.com/bitcoinuniverseio/index-tandem">
+              <strong>index-tandem, pipeline A</strong>
+              <small>TypeScript and NestJS. Consumes ordered blocks from Bitcoin Core, records protocol observations, keeps a separate mempool overlay, and exposes query and agreement surfaces over HTTP. Publishes an OpenAPI 3.0 contract.</small>
+            </a>
+            <a href="https://github.com/bitcoinuniverseio/tandem-verifier-rs">
+              <strong>tandem-verifier-rs, pipeline B</strong>
+              <small>Rust. Reimplements the parser, reducer, and roots without importing pipeline A, verifies SegWit v0 signatures at its own chain boundary, and signs its own agreement tuples.</small>
+            </a>
+            <a href="https://bitcoinuniverseio.github.io/index-tandem/">
+              <strong>index-tandem documentation</strong>
+              <small>The indexer's own published documentation site, including its readiness contract and route reference.</small>
+            </a>
+          </div>
+
+          <h3>Read their status claims carefully</h3>
+          <p>
+            index-tandem describes itself as an implementation scaffold with executable protocol
+            boundaries and unit tests. Its own documentation states it does not claim a live Bitcoin
+            Core connection, ZMQ delivery, a migrated database, a signet replay, or a production
+            signature ceremony, and that readiness fails closed until those dependencies and a
+            signing key are verified at runtime. Several capabilities exist as implemented and
+            tested boundaries that nothing currently calls, which its documentation lists under what
+            still needs a driver.
+          </p>
+          <p>
+            The practical consequence for an integrator is that you should read the indexer's
+            readiness output rather than assume it. Its readiness evaluation is a fixed ordered list
+            of gates covering configuration, database, Bitcoin Core availability, network match,
+            initial block download, node height, protocol tip presence, tip staleness, checkpoint
+            completeness, and signer availability, and it reports every failing gate rather than
+            just the first. A route that fails closed returns an explicit unavailable status rather
+            than stale data, which is the behaviour you want.
+          </p>
+
+          <div class="note">
+            <strong>No Universe product implements a trade path for Tandem.</strong>
+            <p>
+              The Bitcoin Universe capability snapshot records 38 protocols, 29 of them with a
+              marketplace entry. Tandem has no entry in that snapshot at all, so no Universe surface
+              implements a buy, sell, list, or transfer action for a Tandem object, and no indexer,
+              freshness, confirmation, or reorganization policy is recorded for it there. Treat any
+              claim of a Tandem market as unsupported.
+            </p>
+          </div>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="pair-check.html">Back: pair check tool</a>
+          <a href="schemas.html">Next: JSON Schema reference</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="verifier.html">Independent verifier</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

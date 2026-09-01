@@ -14,6 +14,6 @@ This standard applies in repository discussions, reviews, issue threads, communi
 
 ## Reporting conduct concerns
 
-Report conduct concerns privately through [GitHub private vulnerability reporting](https://github.com/bitcoinuniverse/tandem/security/advisories/new). Begin the title with `Conduct report:` so maintainers can route it correctly. Security vulnerabilities must use the same private reporting route and should begin with `Security report:`.
+Report conduct concerns privately through [GitHub private vulnerability reporting](https://github.com/bitcoinuniverseio/tandem/security/advisories/new). Begin the title with `Conduct report:` so maintainers can route it correctly. Security vulnerabilities must use the same private reporting route and should begin with `Security report:`.
 
 Maintainers may remove content, restrict participation, or take other proportionate action to protect the community. Reports will be handled with care for privacy and due process.

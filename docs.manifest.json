@@ -11,12 +11,24 @@
   "chains": [
     {
       "chain": "bitcoin",
-      "networks": ["mainnet", "signet", "testnet4", "regtest"]
+      "networks": [
+        "mainnet",
+        "signet",
+        "testnet4",
+        "regtest"
+      ]
     }
   ],
-  "protocols": ["tandem"],
-  "audiences": ["protocol-implementer", "app-developer"],
-  "specifications": ["tandem.md"],
+  "protocols": [
+    "tandem"
+  ],
+  "audiences": [
+    "protocol-implementer",
+    "app-developer"
+  ],
+  "specifications": [
+    "tandem.md"
+  ],
   "contracts": {
     "jsonSchema": [
       "schemas/agreement-envelope.schema.json",
@@ -24,10 +36,12 @@
       "schemas/close.schema.json"
     ]
   },
-  "owners": ["bitcoinuniverseio"],
+  "owners": [
+    "bitcoinuniverseio"
+  ],
   "securityClassification": "public",
   "lastVerified": {
-    "commit": "1f2381b1b2ee6371eacfb6b9eb95e4d5b170b0be",
-    "timestamp": "2026-09-01T01:18:25Z"
+    "commit": "efcf69216138c5881ec29ab8c4875f8f39724ebe",
+    "timestamp": "2026-09-01T12:14:29Z"
   }
 }

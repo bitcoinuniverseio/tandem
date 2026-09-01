@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Tandem is implemented twice in two languages that share no code. This page explains what the independent Rust verifier checks, how to run it against the published vectors, and the exact limits of what agreement proves."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="The independent Tandem verifier">
+    <meta property="og:description" content="A second implementation in a different language, sharing only frozen bytes. What it proves, what it cannot prove, and how to run it yourself.">
+    <title>The independent Tandem verifier</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the page</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="vectors.html">Vectors</a>
+        <a href="conformance.html">Conformance</a>
+      </nav>
+      <a class="header-link" href="https://github.com/bitcoinuniverseio/tandem-verifier-rs">Verifier repository</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">The trust property</p>
+      <h1>Two implementations,<br><em>no shared code.</em></h1>
+      <p class="dossier-lede">
+        The strongest claim a deterministic protocol can make is that someone who does not trust its
+        author can rebuild it and get the same answer. Tandem is implemented twice: once in
+        TypeScript and once in Rust. The Rust implementation refuses to import the TypeScript one.
+        The only thing they share is a short list of frozen files, pinned by digest.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Verifier sections">
+          <p>On this page</p>
+          <a href="#why">Why two implementations</a>
+          <a href="#lock">The shared surface</a>
+          <a href="#covers">What it verifies</a>
+          <a href="#run">Run it yourself</a>
+          <a href="#fuzz">Fuzzing and properties</a>
+          <a href="#proves">What agreement proves</a>
+          <a href="#limits">What it does not prove</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="why" aria-labelledby="why-title">
+          <h2 id="why-title">Why two implementations</h2>
+          <p class="lede">
+            A metaprotocol is not enforced by Bitcoin consensus. Bitcoin will happily confirm a
+            transaction that Tandem considers invalid. Everything above the script layer is decided
+            by parsers, which means a single parser is a single point of failure with no external
+            check on it.
+          </p>
+
+          <p>
+            The usual mitigation is to publish a specification and hope. Tandem goes further: the
+            specification's own invariant 12 requires that independent implementations produce
+            identical events, reason codes, state, counters, and all three roots at every height,
+            given the same binding and the same blocks. That is a testable claim, and the second
+            implementation exists to test it.
+          </p>
+
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">PIPELINE A</span></h4>
+              <p>
+                <a href="https://github.com/bitcoinuniverseio/index-tandem">index-tandem</a>.
+                TypeScript, NestJS, MySQL. Consumes ordered blocks from Bitcoin Core, records
+                protocol observations, and exposes query and agreement surfaces over HTTP with a
+                published OpenAPI contract.
+              </p>
+            </div>
+            <div>
+              <h4><span class="side-tag b">PIPELINE B</span></h4>
+              <p>
+                <a href="https://github.com/bitcoinuniverseio/tandem-verifier-rs">tandem-verifier-rs</a>.
+                Rust, PostgreSQL. Reimplements the marker parser, the reducer, and the roots. Its
+                README states plainly that it does not import, execute, or depend on the TypeScript
+                parser or indexer.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Different language, different runtime, different database, different developer
+            assumptions. A bug that survives both is far more likely to be a specification problem
+            than an implementation slip, which is exactly the class of problem you want surfaced
+            before a network is live.
+          </p>
+        </section>
+
+        <section id="lock" aria-labelledby="lock-title">
+          <h2 id="lock-title">The shared surface, pinned by digest</h2>
+          <p>
+            The two implementations do share something, and being precise about what is the whole
+            point. The Rust repository carries a lock file listing every shared artifact and its
+            SHA256. Nothing else crosses the boundary.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>The six pinned inputs, and where each is published in this repository</caption>
+              <thead><tr><th>Artifact</th><th>Pinned digest</th></tr></thead>
+              <tbody>
+                <tr><td><a href="../tandem.md">tandem.md</a></td><td><code>caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f</code></td></tr>
+                <tr><td><a href="../schemas/agreement-envelope.schema.json">schemas/agreement-envelope.schema.json</a></td><td><code>1d5493758b1cc358b02491b675b9e7cb64c51fe3ce2e3f0cde9669882717faa1</code></td></tr>
+                <tr><td><a href="../schemas/chapter.schema.json">schemas/chapter.schema.json</a></td><td><code>9fa613d576b2aeb95b52140c89180f05f65ecd7f4266797f41a1e685610dfc17</code></td></tr>
+                <tr><td><a href="../schemas/close.schema.json">schemas/close.schema.json</a></td><td><code>e6645b4ec1eeb44996a37847d4318168959a905fb334b48f4f3298cc6340bc59</code></td></tr>
+                <tr><td><a href="../vectors/generated/manifest.json">vectors/generated/manifest.json</a></td><td><code>d443d9b6e178b95b707620593e471b2146c2747be0f7789dc06f54ce133c33ac</code></td></tr>
+                <tr><td><a href="../vectors/generated/golden.json">vectors/generated/golden.json</a></td><td><code>fc4bee2c20fe94a66a9849f1dc3d73bc407179474e936de29eddef85dcfb5856</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Every one of those six digests matches the values this repository's own verifier pins in
+            <a href="../scripts/verify-public.mjs">scripts/verify-public.mjs</a>. Two independently
+            maintained lists of hashes agreeing is a small thing, but it is the kind of small thing
+            that stops a silent artifact swap.
+          </p>
+
+          <p>
+            Note what is <em>not</em> pinned. The vector root from
+            <a href="vectors.html#files">the manifest</a> is deliberately absent from the lock. The
+            Rust verifier recomputes it from the fixture digest instead of trusting the published
+            value, so an incorrect root would be caught rather than copied. The lock also refuses
+            any path that is absolute or contains a parent-directory component, so a tampered lock
+            cannot be used to read files outside the protocol directory it is pointed at.
+          </p>
+        </section>
+
+        <section id="covers" aria-labelledby="covers-title">
+          <h2 id="covers-title">What the Rust implementation verifies</h2>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Capabilities and where they live</caption>
+              <thead><tr><th>Capability</th><th>Implemented in</th></tr></thead>
+              <tbody>
+                <tr><td>Marker candidate detection and strict push encoding</td><td><code>tandem-core</code>, marker module</td></tr>
+                <tr><td>Payload grammar and per-opcode exact lengths</td><td><code>tandem-core</code>, marker and types modules</td></tr>
+                <tr><td>The stable reason enumeration with explicit numeric values</td><td><code>tandem-core</code>, types module</td></tr>
+                <tr><td>Rejection precedence, including the dispatch order in rule INV-1</td><td><code>tandem-core</code>, reducer module</td></tr>
+                <tr><td>The state machine, block application, and block disconnection</td><td><code>tandem-core</code>, reducer module</td></tr>
+                <tr><td>Event leaf hashing and the event Merkle root</td><td><code>tandem-core</code>, roots module</td></tr>
+                <tr><td>Object-state leaf hashing and the object Merkle root</td><td><code>tandem-core</code>, roots module</td></tr>
+                <tr><td>The chained block root and the pre-INIT state root</td><td><code>tandem-core</code> and the CLI</td></tr>
+                <tr><td>Namespace, protocol identifier, and object key derivation</td><td><code>tandem-core</code>, types module</td></tr>
+                <tr><td>Carrier witness script and P2WSH derivation</td><td><code>tandem-core</code>, types module</td></tr>
+                <tr><td>SegWit v0 signature verification for P2WPKH and the 2-of-2 carrier</td><td>The service crate, at its own Bitcoin Core boundary</td></tr>
+                <tr><td>Agreement tuple JCS normalization and Ed25519 signing</td><td>The service crate, signer module</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="note warn">
+            <strong>The core library does not verify signatures, and says so.</strong>
+            <p>
+              <code>tandem-core</code> is deliberately free of any database, HTTP, or network
+              dependency. Callers supply resolved transaction inputs including exact prevout data
+              <em>and the result of independent signature verification</em>. The reducer reads that
+              result as a boolean and maps a false value to
+              <code>BAD_SIGNATURE_OR_SIGHASH</code>. Signatures are actually computed in the service
+              crate, which verifies them against real chain data at its own Bitcoin Core boundary.
+            </p>
+            <p>
+              The practical consequence: a replay run through the CLI trusts the signature flag in
+              the replay file it is given. It proves the parser, reducer, and roots agree. It does
+              not, on its own, prove anything about signatures.
+            </p>
+          </div>
+        </section>
+
+        <section id="run" aria-labelledby="run-title">
+          <h2 id="run-title">Run it yourself</h2>
+          <p class="lede">
+            This is the part that matters. You do not need our infrastructure, our database, or our
+            permission. You need a Rust toolchain and a checkout of two public repositories.
+          </p>
+
+          <p>
+            The verifier pins Rust 1.97.1 with a toolchain file, uses edition 2024, forbids unsafe
+            code, and denies both the <code>all</code> and <code>pedantic</code> clippy groups. Its
+            three crates are at version 0.1.0 and are not published to crates.io, so build from
+            source.
+          </p>
+
+          <div class="code">
+            <span class="code-label">Verify the frozen inputs against this repository</span>
+            <pre><code>cargo run -p tandem-cli -- verify-inputs \
+  --lock protocol-inputs.lock.json \
+  --protocol-root ../tandem</code></pre>
+          </div>
+
+          <p>
+            This reads every artifact named in the lock from your checkout of <em>this</em>
+            repository and compares its digest. If someone has altered the specification, a schema,
+            or the corpus, this is where it shows up.
+          </p>
+
+          <div class="code">
+            <span class="code-label">Verify the golden corpus independently</span>
+            <pre><code>cargo run -p tandem-cli -- verify-vectors \
+  --manifest ../tandem/vectors/generated/manifest.json \
+  --spec ../tandem/tandem.md</code></pre>
+          </div>
+
+          <p>
+            This one does the real work. It checks the manifest's schema identifier, confirms it
+            names <code>tandem.md</code> and <code>golden.json</code>, recomputes the specification
+            digest and the fixture digest, derives the vector root and requires it to equal the
+            published one, confirms the fixture's own schema identifier, and confirms the
+            specification digest recorded inside the fixture matches the one it just computed.
+          </p>
+
+          <div class="code">
+            <span class="code-label">Replay resolved blocks through the independent reducer</span>
+            <pre><code>cargo run -p tandem-cli -- replay --input replay.json</code></pre>
+          </div>
+
+          <p>
+            A replay file supplies a binding, a list of block views, and optionally an array of
+            expected roots per height. The CLI applies each block through the Rust reducer and fails
+            with a root mismatch at the first height that diverges, which makes it a usable
+            differential driver against any other implementation that can emit the same block views.
+          </p>
+
+          <p>
+            The verifier's own recorded verification run reports the same three roots this
+            repository publishes: event root
+            <code>475b25d2&hellip;fae046ce</code>, object-state root
+            <code>67ec64ab&hellip;7e110d79</code>, and chained root
+            <code>c54cd3c6&hellip;6322e260</code>. Those are the values on
+            <a href="vectors.html#roots">the vectors page</a>, arrived at by different code.
+          </p>
+
+          <div class="code">
+            <span class="code-label">Build and test the whole workspace</span>
+            <pre><code>cargo fmt --all -- --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo test --workspace --all-features
+cargo build --workspace --release --locked</code></pre>
+          </div>
+        </section>
+
+        <section id="fuzz" aria-labelledby="fuzz-title">
+          <h2 id="fuzz-title">Fuzzing and property tests</h2>
+          <p>
+            The verifier carries two <code>cargo-fuzz</code> targets, kept in their own workspace so
+            they never enter a release build.
+          </p>
+          <ul>
+            <li>
+              <strong>Marker target.</strong> Feeds arbitrary bytes to the candidate detector and,
+              on a hit, to the parser. The property is that arbitrary script bytes, including
+              malformed push lengths, truncation, trailing data, and non-minimal encodings, always
+              produce a reason rather than a panic.
+            </li>
+            <li>
+              <strong>Replay target.</strong> Deserializes arbitrary block views against a fixed
+              regtest binding and drives the reducer over the first 32 blocks. The property is that
+              adversarial but type-valid input produces errors, never aborts.
+            </li>
+          </ul>
+          <p>
+            Alongside them are property tests asserting that marker detection and parsing never
+            panic, that any successfully parsed marker has a payload length in the range 7 to 80 and
+            exactly the declared length for a defined opcode, that distinct CREATE transaction
+            identifiers yield distinct object keys, and that the exact payload lengths match the
+            specification.
+          </p>
+          <div class="note">
+            <strong>Targets exist, a campaign has not been recorded.</strong>
+            <p>
+              The verifier's own verification record explicitly disclaims a timed fuzz campaign. The
+              harness is present and runnable; published evidence of a sustained run is not. Do not
+              read the presence of fuzz targets as a claim about fuzzing coverage.
+            </p>
+          </div>
+        </section>
+
+        <section id="proves" aria-labelledby="proves-title">
+          <h2 id="proves-title">What agreement actually proves</h2>
+          <p class="lede">
+            Independent agreement is a strong property and a narrow one. Being precise about its
+            edges is what makes it worth anything.
+          </p>
+
+          <p>
+            The design is a comparison of signed outputs, not a differential test rig. Neither
+            pipeline reads the other's output. Each processes the same height independently and
+            signs a tuple. Agreement means the two signed tuples match on the nine semantic fields.
+            When they do, you know:
+          </p>
+
+          <ul>
+            <li>Two codebases, written in different languages, independently derived the same event set for that height.</li>
+            <li>They agree on every object's status, sequence, key pair, carrier, and chapter count, because those all feed the object-state root.</li>
+            <li>They agree on the whole history up to that height, because the chained root incorporates every previous block's root.</li>
+            <li>A parser bug that changes any classification, any reason code, or any ordering would have to exist identically in both, which is unlikely for genuinely independent work.</li>
+          </ul>
+
+          <p>
+            That is a meaningful reduction in the risk that one parser silently presents incorrect
+            state. It is the property the whole two-pipeline arrangement exists to produce, and it is
+            worth building for.
+          </p>
+
+          <h3>How to respond to a disagreement</h3>
+          <p>
+            Fail closed. Do not present state for the disputed height and do not allow a
+            state-changing construction against it. Then compare in a fixed order: event root,
+            object-state root, counters, chained root. The first difference localizes the problem.
+            All three components matching while the chained root differs points at the chaining
+            input rather than at this block. Do not designate either pipeline as correct on the
+            basis of ownership or release order.
+          </p>
+        </section>
+
+        <section id="limits" aria-labelledby="limits-title">
+          <h2 id="limits-title">What it does not prove</h2>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Limits of the independent verification story, stated plainly</caption>
+              <thead><tr><th>Not proven</th><th>Why</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>That the specification is correct</td>
+                  <td>Both implementations follow the same document. A specification error is reproduced faithfully by both, and agreement will not surface it. The <a href="specification.html#errata">errata</a> is an example of a discrepancy caught by measurement rather than by agreement.</td>
+                </tr>
+                <tr>
+                  <td>That either pipeline is honest at runtime</td>
+                  <td>A signed tuple proves what a key holder asserted, not that the software behind it behaved. Provenance fields identify a build; they do not attest that the build ran.</td>
+                </tr>
+                <tr>
+                  <td>That the two pipelines have ever agreed on a real chain</td>
+                  <td>The verifier's own launch gate for pipeline agreement is recorded as not performed. What exists today is a shared golden corpus that both can process, and a recorded local verification run.</td>
+                </tr>
+                <tr>
+                  <td>That the Rust verifier is production ready</td>
+                  <td>Its own gate list records the great majority of gates as not completed, not exercised, or not granted. Its documentation disclaims live Bitcoin Core, live database, and live message-queue exercise, plus regtest and signet transcripts, a key ceremony, and mainnet authority.</td>
+                </tr>
+                <tr>
+                  <td>That signatures are correct in a CLI replay</td>
+                  <td>The core library takes signature validity as an input. Only the service crate computes it from real chain data.</td>
+                </tr>
+                <tr>
+                  <td>That your own key management is sound</td>
+                  <td>Nothing in this arrangement protects a lost key, a coerced signature, or a compromised signing device.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="note warn">
+            <strong>Neither implementation is a released product.</strong>
+            <p>
+              Mainnet is not active. Both repositories are public source with unit coverage, not
+              deployed infrastructure, and both say so in their own words. Treat the verification
+              story described on this page as a design that can be exercised today against the
+              published corpus, and as evidence still to be produced against a live network.
+            </p>
+          </div>
+
+          <p>
+            The honest summary: an independent second implementation in a different language is a
+            genuinely strong trust property, and this one is real, runnable, and pinned to the same
+            frozen bytes. What has not yet happened is the two pipelines agreeing continuously over
+            a live chain for a sustained period. Until that is published, the property is
+            demonstrated on a fixed corpus rather than proven in operation.
+          </p>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="vectors.html">Back: test vectors</a>
+          <a href="conformance.html">Next: conformance and checklist</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="vectors.html">Test vectors</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

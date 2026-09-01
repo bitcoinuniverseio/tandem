@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="An in-browser Tandem pairing verifier: supply two candidate records or two candidate keys and see exactly which numbered rule each half passes or fails, with the stable reason code."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem pair check">
+    <meta property="og:description" content="Check whether two candidate Tandem records form a valid pair, entirely in your browser, against the repository's own rules and vectors.">
+    <title>Tandem pair check</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+    <script src="../assets/pair-check.js" defer></script>
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the tool</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="guide.html">Guide</a>
+        <a href="vectors.html">Vectors</a>
+      </nav>
+      <a class="header-link" href="conformance.html">Conformance</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Interactive</p>
+      <h1>Pair check</h1>
+      <p class="dossier-lede">
+        Supply two candidate halves and watch the rules run. This page implements the marker
+        grammar and pairing rules from <a href="../tandem.md">tandem.md</a> directly, names the
+        numbered rule behind every check, and reports the exact stable reason code a real parser
+        would emit. It then tests itself against the repository's published vectors so you can see
+        it is not lying to you.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Tool sections">
+          <p>On this page</p>
+          <a href="#records">Record pair</a>
+          <a href="#carrier">Carrier pair</a>
+          <a href="#derive">Binding derivation</a>
+          <a href="#roots">Vector self test</a>
+          <a href="#limits">What this does not check</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="privacy" aria-labelledby="privacy-title">
+          <h2 id="privacy-title">Before you paste anything</h2>
+          <p>
+            Every check on this page runs in your browser. Nothing you type is sent anywhere, and
+            there is no form submission, no analytics, and no third-party script. The page's
+            content security policy restricts connections to this origin, and the only request it
+            makes is a read of
+            <a href="../vectors/generated/golden.json">vectors/generated/golden.json</a> from this
+            same site, used for the self test at the bottom.
+          </p>
+          <p>
+            This is a protocol inspection tool. It does not build, sign, or broadcast Bitcoin
+            transactions, and it never asks for a private key. Paste public keys and marker scripts
+            only.
+          </p>
+          <noscript>
+            <div class="noscript-note">
+              <strong>This tool needs JavaScript.</strong>
+              <p>
+                With scripting disabled the panels below will not run. Everything the tool checks
+                is written out as numbered rules on
+                <a href="specification.html">the specification page</a>, and the same values are
+                published in <a href="vectors.html">the test vectors</a>.
+              </p>
+            </div>
+          </noscript>
+        </section>
+
+        <section id="records" aria-labelledby="records-title">
+          <p class="kicker">The main tool</p>
+          <h2 id="records-title">Do these two records form a pair?</h2>
+          <p class="lede">
+            Paste a marker script into each side. Side A is the predecessor, side B is the proposed
+            successor. Each half is first checked on its own, then the two are checked against each
+            other. A half that is malformed can never pair, and two well-formed halves can still
+            fail to belong together.
+          </p>
+
+          <div class="tool">
+            <div class="tool-head">
+              <h3>Record pair</h3>
+              <p>Accepts a full marker script starting with <code>6a</code>, or a bare payload starting with <code>544e444d</code>.</p>
+            </div>
+            <div class="tool-sides">
+              <div>
+                <label for="record-a"><span class="side-tag a">SIDE A</span> Predecessor record</label>
+                <textarea id="record-a" spellcheck="false" autocomplete="off" placeholder="6a4c4e544e444d..."></textarea>
+                <p class="hint">The record that already exists on chain.</p>
+                <ol class="checks" id="record-a-checks"></ol>
+              </div>
+              <div>
+                <label for="record-b"><span class="side-tag b">SIDE B</span> Successor record</label>
+                <textarea id="record-b" spellcheck="false" autocomplete="off" placeholder="6a2c544e444d..."></textarea>
+                <p class="hint">The record that claims to follow it.</p>
+                <ol class="checks" id="record-b-checks"></ol>
+              </div>
+            </div>
+            <div class="tool-actions">
+              <button type="button" id="load-vectors" disabled>Load a matching pair from the vectors</button>
+              <button type="button" class="ghost" id="break-pair" disabled>Load a mismatched pair</button>
+              <button type="button" class="ghost" id="record-clear">Clear</button>
+            </div>
+            <div class="verdict">
+              <div class="verdict-head">
+                <span class="verdict-flag idle" id="record-verdict-flag" role="status">AWAITING INPUT</span>
+                <span class="side-tag a">A</span>
+                <span class="side-tag b">B</span>
+              </div>
+              <p class="verdict-note" id="record-verdict-note">Paste a marker into each side, or load the published vectors below.</p>
+              <ol class="checks" id="record-pair-checks"></ol>
+            </div>
+          </div>
+
+          <h3>How to read a failure</h3>
+          <p>
+            Every failing line names the rule it enforces and the stable reason a conforming parser
+            emits. Those reasons are not advisory labels. Rule INV-3 requires an implementation to
+            return the <em>lowest</em> failing code, so if you are writing tests, the reason shown
+            for the first structural failure is the one your implementation must produce.
+          </p>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>What each kind of mismatch means</caption>
+              <thead><tr><th>Symptom</th><th>Rule</th><th>Reason emitted</th></tr></thead>
+              <tbody>
+                <tr><td>Non-minimal push, wrong payload length, trailing bytes</td><td>REC-6</td><td><code>BAD_MARKER_ENCODING_OR_LENGTH</code></td></tr>
+                <tr><td>Marker format byte other than <code>0x01</code></td><td>REC-7</td><td><code>UNKNOWN_MARKER_FORMAT</code></td></tr>
+                <tr><td>Network byte disagrees between the halves</td><td>ID-3</td><td><code>WRONG_NETWORK</code></td></tr>
+                <tr><td>Namespace field disagrees between the halves</td><td>ID-5</td><td><code>WRONG_NAMESPACE</code></td></tr>
+                <tr><td>Successor sequence is not predecessor plus one</td><td>PAIR-5</td><td><code>BAD_STATE_SEQUENCE</code></td></tr>
+                <tr><td>Successor claims to follow a terminal record</td><td>ST-3</td><td><code>PREDECESSOR_NOT_ACTIVE</code></td></tr>
+                <tr><td>MARK chapter commitment is all zero</td><td>REC-8</td><td><code>BAD_COMMITMENT</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="carrier" aria-labelledby="carrier-title">
+          <p class="kicker">The other pair</p>
+          <h2 id="carrier-title">Do these two keys form a carrier?</h2>
+          <p class="lede">
+            The record pair above is the protocol layer. This is the Bitcoin layer underneath it.
+            Two compressed public keys determine one carrier address completely, and the sort order
+            decides which key is side A.
+          </p>
+
+          <div class="tool">
+            <div class="tool-head">
+              <h3>Carrier pair</h3>
+              <p>Compressed secp256k1 public keys only, 33 bytes each. Never paste a private key into any web page.</p>
+            </div>
+            <div class="tool-sides">
+              <div>
+                <label for="key-a"><span class="side-tag a">SIDE A</span> First key</label>
+                <textarea id="key-a" spellcheck="false" autocomplete="off" placeholder="0279be667e..."></textarea>
+                <p class="hint">Order does not matter here. The tool sorts and tells you.</p>
+              </div>
+              <div>
+                <label for="key-b"><span class="side-tag b">SIDE B</span> Second key</label>
+                <textarea id="key-b" spellcheck="false" autocomplete="off" placeholder="02c6047f94..."></textarea>
+                <p class="hint">Both keys must be valid points, and they must differ.</p>
+              </div>
+            </div>
+            <div class="tool-actions">
+              <button type="button" class="ghost" id="carrier-clear">Clear</button>
+            </div>
+            <div class="verdict">
+              <div class="verdict-head">
+                <span class="verdict-flag idle" id="carrier-verdict-flag" role="status">AWAITING INPUT</span>
+              </div>
+              <p class="verdict-note" id="carrier-verdict-note">Paste a compressed public key into each side.</p>
+              <ol class="checks" id="carrier-checks"></ol>
+              <dl class="derived" id="carrier-derived"></dl>
+            </div>
+          </div>
+
+          <p>
+            The curve check is real. The tool tests that the x coordinate lies in the field and that
+            <code>x&sup3; + 7</code> is a quadratic residue, so a 33-byte string with a plausible
+            prefix but no corresponding point is rejected rather than accepted. That is the
+            difference between rule PAIR-1 and a length check.
+          </p>
+        </section>
+
+        <section id="derive" aria-labelledby="derive-title">
+          <p class="kicker">Identity</p>
+          <h2 id="derive-title">Derive a namespace and an object key</h2>
+          <p class="lede">
+            Rules ID-5 and ID-6 are pure functions of the binding. Change any input and every
+            downstream value changes with it, which is exactly why an alternate INIT is a different
+            protocol rather than a different deployment.
+          </p>
+
+          <div class="tool">
+            <div class="tool-head">
+              <h3>Binding derivation</h3>
+              <p>Transaction identifiers are entered in display order, the way Bitcoin Core shows them. The tool reverses them once for you.</p>
+            </div>
+            <div class="tool-sides">
+              <div>
+                <label for="derive-network">Network</label>
+                <select id="derive-network">
+                  <option value="0">mainnet (0x00)</option>
+                  <option value="1">signet (0x01)</option>
+                  <option value="2">testnet4 (0x02)</option>
+                  <option value="3" selected>regtest (0x03)</option>
+                </select>
+                <p class="hint">The network byte is part of the commitment, so the same INIT on two chains gives two namespaces.</p>
+                <label for="derive-spec">Specification digest</label>
+                <textarea id="derive-spec" spellcheck="false" autocomplete="off">caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f</textarea>
+                <p class="hint">SHA256 of tandem.md as raw bytes.</p>
+              </div>
+              <div>
+                <label for="derive-init">Configured INIT txid, display order</label>
+                <textarea id="derive-init" spellcheck="false" autocomplete="off">1010101010101010101010101010101010101010101010101010101010101010</textarea>
+                <label for="derive-create">CREATE txid, display order, optional</label>
+                <textarea id="derive-create" spellcheck="false" autocomplete="off">2020202020202020202020202020202020202020202020202020202020202020</textarea>
+                <p class="hint">Leave empty to derive the namespace alone.</p>
+              </div>
+            </div>
+            <div class="verdict">
+              <p class="verdict-note" id="derive-message" role="status"></p>
+              <dl class="derived" id="derive-output"></dl>
+            </div>
+          </div>
+
+          <p>
+            The values prefilled above are the ones the published corpus uses, so on first load this
+            panel should reproduce
+            <code>38025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221</code> and
+            <code>5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52</code> exactly.
+            If it does not, something is wrong and you should not trust the rest of this page.
+          </p>
+        </section>
+
+        <section id="roots" aria-labelledby="roots-title">
+          <p class="kicker">Proof that the tool is honest</p>
+          <h2 id="roots-title">Vector self test</h2>
+          <p class="lede">
+            A verifier you cannot audit is just an assertion. On load, this page runs its own rules
+            against the repository's published golden corpus, rehashes every published preimage, and
+            rebuilds both Merkle roots from their leaves. The results are below, computed in your
+            browser at page load.
+          </p>
+
+          <div class="selftest">
+            <p id="selftest-summary" role="status">Loading the published corpus.</p>
+            <ul id="selftest-list"></ul>
+          </div>
+
+          <div class="note errata">
+            <strong>Watch the two leaf-length lines.</strong>
+            <p>
+              tandem.md section 13.2 states the event-leaf preimage is 374 bytes with a 16-byte
+              domain tag. The measurement above, taken from the published preimages themselves, is
+              371 bytes: a 13-byte domain tag plus the 358 field bytes the same sentence correctly
+              states. The independent Rust verifier asserts 371 at the same point. This is
+              <a href="specification.html#errata">documented as erratum 1</a> rather than quietly
+              worked around.
+            </p>
+          </div>
+        </section>
+
+        <section id="limits" aria-labelledby="limits-title">
+          <p class="kicker">Honesty</p>
+          <h2 id="limits-title">What this tool does not check</h2>
+          <p>
+            The panels above take markers and keys. They do not take transactions, and they have no
+            view of the chain. That rules out a large part of validation, and pretending otherwise
+            would be worse than useless.
+          </p>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Checks that require data this page does not accept</caption>
+              <thead><tr><th>Not checked here</th><th>Why</th><th>Where it is checked</th></tr></thead>
+              <tbody>
+                <tr><td>Signatures, DER encoding, low-S, sighash type</td><td>Needs the full transaction and its prevout amounts</td><td>The Rust verifier's service boundary, see <a href="verifier.html">the verifier page</a></td></tr>
+                <tr><td>Input and output counts, roles, and sequences</td><td>Needs the transaction, not the marker</td><td>Rules OP-1 to OP-6</td></tr>
+                <tr><td>Fee positivity and the exact split</td><td>Needs input and output values</td><td>Rule PAIR-3.3</td></tr>
+                <tr><td>Whether a predecessor is actually active</td><td>Needs indexed chain state at a height</td><td><a href="indexing.html">Indexer semantics</a></td></tr>
+                <tr><td>Confirmation provenance, that prevouts confirmed in an earlier block</td><td>Needs block heights</td><td>Rule OP-6 note, tandem.md section 5.3</td></tr>
+                <tr><td>Whether a MARK reproduces the predecessor carrier script</td><td>Needs both transactions</td><td>Rule PAIR-6</td></tr>
+                <tr><td>Chapter and close manifest content</td><td>Content availability is never validity</td><td><a href="schemas.html">JSON Schema reference</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            A passing verdict here means the two halves are consistent with each other as far as
+            their markers can express. It is a necessary condition, never a sufficient one. Do not
+            treat it as a statement about a real transaction on a real chain.
+          </p>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="guide.html">Back: guide and worked examples</a>
+          <a href="indexing.html">Next: indexer semantics</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="vectors.html">Test vectors</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>
