@@ -67,6 +67,7 @@
             <a href="#use-cases">Use cases</a>
             <a href="#integrations">Integration guide</a>
             <a href="#protocol">Public contract</a>
+            <a href="protocol.html">Protocol dossier</a>
             <a href="#faq">Questions</a>
             <a href="#roadmap">Readiness</a>
             <a href="#security">Security</a>
@@ -128,7 +129,7 @@
                 <h3>What makes it distinct</h3>
                 <ul class="docs-list">
                   <li><strong>Shared control is structural.</strong> Cooperation lives in the Bitcoin output, not an account permission.</li>
-                  <li><strong>The history follows exact rules.</strong> Independent implementations can derive the same canonical state.</li>
+                  <li><strong>The history follows exact rules.</strong> Independent implementations can derive the same state.</li>
                   <li><strong>Recovery is prepared before progress.</strong> Each state-changing parent needs a completed recovery path first.</li>
                   <li><strong>No administrator can rewrite it.</strong> No platform key can replace participants or edit object state.</li>
                 </ul>
@@ -201,7 +202,7 @@
               </article>
               <article>
                 <h3>Verification</h3>
-                <p>State-changing construction and broadcast should fail closed whenever independent indexers disagree at the same canonical height.</p>
+                <p>State-changing construction and broadcast should fail closed whenever independent indexers disagree at the same block height.</p>
               </article>
               <article>
                 <h3>Content</h3>
@@ -256,7 +257,7 @@
             </p>
             <h3>Content manifests</h3>
             <p>
-              Canonicalize chapter and close manifests using RFC 8785 JCS before hashing. Retrieve
+              Normalize chapter and close manifests with RFC 8785 JCS before hashing. Retrieve
               only the payload identified by <code>content_sha256</code>, verify its bytes before
               display, and treat URI availability as separate from on-chain validity.
             </p>
@@ -271,14 +272,32 @@
               line endings before hashing.
             </p>
             <div class="artifact-list">
-              <a href="../tandem.md"><span>Normative specification</span><small>Canonical protocol bytes</small></a>
+              <a href="../tandem.md"><span>Normative specification</span><small>Authoritative protocol bytes</small></a>
               <a href="../release/spec.json"><span>Specification release record</span><small>Digest, byte count, and finalization status</small></a>
               <a href="../schemas/chapter.schema.json"><span>Chapter schema</span><small>Strict public manifest contract</small></a>
               <a href="../schemas/close.schema.json"><span>Close schema</span><small>Strict terminal manifest contract</small></a>
               <a href="../schemas/agreement-envelope.schema.json"><span>Agreement envelope schema</span><small>Signed indexer evidence contract</small></a>
               <a href="../vectors/create-marker.example.json"><span>CREATE marker example</span><small>Minimal public marker input</small></a>
-              <a href="../vectors/generated/golden.json"><span>Golden fixture corpus</span><small>Canonical valid and invalid fixtures</small></a>
+              <a href="../vectors/generated/golden.json"><span>Golden fixture corpus</span><small>Authoritative valid and invalid fixtures</small></a>
               <a href="../vectors/generated/manifest.json"><span>Golden vector manifest</span><small>Specification, fixture, and root binding</small></a>
+            </div>
+            <h3>Go deeper</h3>
+            <p>
+              The <a href="protocol.html">protocol dossier</a> restates the specification as numbered
+              rules, works through examples using the published vectors, documents indexer
+              semantics and the independent verifier, and provides an in-browser
+              <a href="pair-check.html">pair check tool</a>.
+            </p>
+            <div class="artifact-list">
+              <a href="specification.html"><span>Normative specification</span><small>Numbered, citable rules</small></a>
+              <a href="guide.html"><span>Guide and worked examples</span><small>Real bytes, decoded</small></a>
+              <a href="pair-check.html"><span>Pair check tool</span><small>Runs in your browser</small></a>
+              <a href="indexing.html"><span>Indexer semantics</span><small>Confirmation, reorganization, mempool</small></a>
+              <a href="schemas.html"><span>JSON Schema reference</span><small>All three schemas</small></a>
+              <a href="vectors.html"><span>Test vectors</span><small>The golden corpus</small></a>
+              <a href="verifier.html"><span>Independent verifier</span><small>What it proves</small></a>
+              <a href="conformance.html"><span>Conformance and checklist</span><small>An ordered build order</small></a>
+              <a href="considerations.html"><span>Security, limits, changelog</span><small>Honest boundaries</small></a>
             </div>
             <div class="docs-command" aria-label="Public verification command">
               <span>Verify locally</span>
@@ -355,7 +374,7 @@
               divergent interpretation, exposed credentials, and private conduct concerns as
               sensitive. Never place them in a public issue.
             </p>
-            <a class="button button-ink" href="https://github.com/bitcoinuniverse/tandem/security/advisories/new">Open a private report</a>
+            <a class="button button-ink" href="https://github.com/bitcoinuniverseio/tandem/security/advisories/new">Open a private report</a>
             <p class="docs-footnote">
               Begin the title with <code>Security report:</code> or <code>Conduct report:</code> so
               maintainers can route it correctly. Include only the minimum safe reproduction or
@@ -374,7 +393,7 @@
             <ul class="docs-list">
               <li>Keep claims accurate about Bitcoin, custody, recovery, privacy, availability, and network status.</li>
               <li>Never submit secrets, private transaction data, internal plans, operational procedures, or sensitive implementation detail.</li>
-              <li>Do not edit canonical bytes, schemas, release metadata, or golden vectors as part of a product copy change.</li>
+              <li>Do not edit protocol bytes, schemas, release metadata, or golden vectors as part of a product copy change.</li>
               <li>Run <code>node scripts/verify-public.mjs</code> and review visual changes across keyboard, motion, zoom, narrow, and wide conditions.</li>
             </ul>
           </section>
@@ -415,6 +434,7 @@
       <p>One Bitcoin-native object, controlled together.</p>
       <nav aria-label="Footer navigation">
         <a href="../index.html">Product</a>
+        <a href="protocol.html">Protocol dossier</a>
         <a href="#protocol">Public contract</a>
         <a href="#security">Private reporting</a>
         <a href="#repository-boundary">Repository boundary</a>

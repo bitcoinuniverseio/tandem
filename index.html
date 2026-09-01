@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta
       name="description"
-      content="Tandem lets two people create and evolve one Bitcoin-native object with shared control and a recovery path prepared in advance."
+      content="Tandem is a Bitcoin protocol for one object controlled by two people: every state change needs a matched pair of signatures, and recovery is prepared before the state moves."
     >
     <meta name="theme-color" content="#10120f">
     <meta
@@ -35,6 +35,7 @@
         <a href="#journey">Object journey</a>
         <a href="#builders">For builders</a>
         <a href="#readiness">Readiness</a>
+        <a href="docs/protocol.html">Protocol dossier</a>
       </nav>
       <a class="header-link" href="docs/index.html#getting-started">Start here</a>
     </header>
@@ -119,7 +120,7 @@
         <div class="journey-intro">
           <h2 id="journey-title">See how one shared object <em>moves.</em></h2>
           <p>
-            Explore the canonical actions. This demonstration explains the state model and
+            Explore the defined actions. This demonstration explains the state model and
             never creates, signs, or broadcasts a transaction.
           </p>
         </div>
@@ -230,20 +231,20 @@
           <div>
             <h2 id="builders-title">The public contract is exact and inspectable.</h2>
             <p>
-              Read the canonical protocol bytes, validate chapter and close manifests, and test
+              Read the authoritative protocol bytes, validate chapter and close manifests, and test
               against the published golden vectors. Independent implementations can conform to
               the same public contract without sharing a codebase.
             </p>
             <div class="builder-actions">
-              <a class="button button-ink" href="docs/index.html#protocol">Browse the contract</a>
-              <a class="text-link" href="docs/index.html#integrations">Integration guide</a>
+              <a class="button button-ink" href="docs/protocol.html">Open the protocol dossier</a>
+              <a class="text-link" href="docs/pair-check.html">Try the pair check tool</a>
             </div>
           </div>
           <div class="contract-stack" aria-label="Published contract artifacts">
-            <a href="tandem.md"><span>01</span><strong>Normative protocol</strong><small>Canonical bytes</small></a>
+            <a href="docs/specification.html"><span>01</span><strong>Normative specification</strong><small>Numbered rules</small></a>
             <a href="schemas/chapter.schema.json"><span>02</span><strong>Chapter schema</strong><small>Public JSON contract</small></a>
             <a href="schemas/close.schema.json"><span>03</span><strong>Close schema</strong><small>Public JSON contract</small></a>
-            <a href="vectors/generated/manifest.json"><span>04</span><strong>Golden vectors</strong><small>Deterministic fixtures</small></a>
+            <a href="docs/vectors.html"><span>04</span><strong>Golden vectors</strong><small>Deterministic fixtures</small></a>
           </div>
         </div>
       </section>
@@ -282,6 +283,7 @@
       <p>One Bitcoin-native object, controlled together.</p>
       <nav aria-label="Footer navigation">
         <a href="docs/index.html">Documentation</a>
+        <a href="docs/protocol.html">Protocol dossier</a>
         <a href="docs/index.html#security">Security</a>
         <a href="docs/index.html#contribute">Contribute</a>
         <a href="docs/index.html#repository-boundary">Repository boundary</a>

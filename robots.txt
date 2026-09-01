@@ -1,0 +1,8 @@
+# Tandem public product and protocol site.
+# Everything published here is intended to be public and is safe to index.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://bitcoinuniverseio.github.io/tandem/sitemap.xml
+Sitemap: https://bitcoinuniverseio.github.io/tandem/sitemap-index.xml

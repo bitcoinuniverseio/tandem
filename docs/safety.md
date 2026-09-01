@@ -36,4 +36,4 @@ Bitcoin transactions and public protocol events are observable. Do not place per
 
 ## Report a concern
 
-Use [GitHub private vulnerability reporting](https://github.com/bitcoinuniverse/tandem/security/advisories/new). Do not publish a suspected fund-loss, signing, recovery, or consensus-divergence issue before maintainers can assess it privately.
+Use [GitHub private vulnerability reporting](https://github.com/bitcoinuniverseio/tandem/security/advisories/new). Do not publish a suspected fund-loss, signing, recovery, or consensus-divergence issue before maintainers can assess it privately.

@@ -4,7 +4,7 @@ Tandem involves Bitcoin transactions, shared control, recovery paths, and indepe
 
 ## Report privately
 
-Use [GitHub private vulnerability reporting](https://github.com/bitcoinuniverse/tandem/security/advisories/new) for suspected vulnerabilities.
+Use [GitHub private vulnerability reporting](https://github.com/bitcoinuniverseio/tandem/security/advisories/new) for suspected vulnerabilities.
 
 Do not open a public issue for a suspected vulnerability. Do not include seed phrases, private keys, wallet backups, production credentials, access tokens, personally identifying wallet data, or unrelated transaction history in any report.
 
