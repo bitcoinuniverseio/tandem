@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="Field-by-field reference for the three published Tandem JSON Schemas: the chapter manifest, the close manifest, and the independent-indexer agreement envelope."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem JSON Schema reference">
+    <meta property="og:description" content="Every constraint in the three published Tandem JSON Schemas, explained field by field with the reasoning behind each restriction.">
+    <title>Tandem JSON Schema reference</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the reference</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="vectors.html">Vectors</a>
+        <a href="conformance.html">Conformance</a>
+      </nav>
+      <a class="header-link" href="../protocol/README.md">Contract index</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Reference</p>
+      <h1>JSON Schema reference</h1>
+      <p class="dossier-lede">
+        This repository publishes exactly three JSON Schemas. All three use Draft 2020-12 and all
+        three set <code>additionalProperties</code> to <code>false</code> at every object level, so
+        an unknown field is a validation error rather than something to ignore. That strictness is
+        deliberate: it makes a future extension impossible to smuggle in unnoticed.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Schema sections">
+          <p>On this page</p>
+          <a href="#overview">The three schemas</a>
+          <a href="#chapter">1. Chapter manifest</a>
+          <a href="#close">2. Close manifest</a>
+          <a href="#agreement">3. Agreement envelope</a>
+          <a href="#using">Using them safely</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="overview" aria-labelledby="overview-title">
+          <h2 id="overview-title">The three schemas</h2>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Published schemas, their identifiers, and what they constrain</caption>
+              <thead><tr><th>File</th><th><code>$id</code></th><th>Constrains</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><a href="../schemas/chapter.schema.json">schemas/chapter.schema.json</a></td>
+                  <td><code>urn:tandem:schema:chapter</code></td>
+                  <td>The off-chain manifest whose digest a MARK commits to</td>
+                </tr>
+                <tr>
+                  <td><a href="../schemas/close.schema.json">schemas/close.schema.json</a></td>
+                  <td><code>urn:tandem:schema:close</code></td>
+                  <td>The off-chain manifest whose digest a CLOSE may commit to</td>
+                </tr>
+                <tr>
+                  <td><a href="../schemas/agreement-envelope.schema.json">schemas/agreement-envelope.schema.json</a></td>
+                  <td><code>urn:tandem:schema:agreement-envelope</code></td>
+                  <td>A signed statement of one pipeline's whole view at one height</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="note">
+            <strong>None of these schemas describe on-chain data.</strong>
+            <p>
+              Nothing validated by a schema on this page ever appears in a Bitcoin transaction. The
+              chain carries 32-byte commitments and nothing else. A manifest that fails schema
+              validation does not make a confirmed MARK invalid, and a manifest that passes does not
+              make an invalid one valid. Keep the two layers apart in your code as firmly as the
+              protocol keeps them apart.
+            </p>
+          </div>
+        </section>
+
+        <section id="chapter" aria-labelledby="chapter-title">
+          <p class="kicker">Schema 1</p>
+          <h2 id="chapter-title">1. Chapter manifest</h2>
+          <p class="lede">
+            A chapter manifest names one piece of content added to an object's history. Its SHA256
+            digest, normalized with RFC 8785 JCS, becomes the <code>manifest_sha256</code> input
+            to the chapter commitment described in rule REC-8 and worked through in
+            <a href="guide.html#content">guide example 7</a>.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Top-level properties. Five are required, two are optional, nothing else is allowed.</caption>
+              <thead><tr><th>Property</th><th>Required</th><th>Constraint</th></tr></thead>
+              <tbody>
+                <tr><td><code>schema</code></td><td>Yes</td><td>Exactly the constant <code>urn:tandem:chapter</code></td></tr>
+                <tr><td><code>title</code></td><td>Yes</td><td>String, 1 to 120 characters, no C0 control characters and no <code>0x7f</code></td></tr>
+                <tr><td><code>content_type</code></td><td>Yes</td><td>String, 3 to 127 characters, a restricted lowercase media type</td></tr>
+                <tr><td><code>content_sha256</code></td><td>Yes</td><td>Exactly 64 lowercase hexadecimal characters</td></tr>
+                <tr><td><code>uris</code></td><td>Yes</td><td>Array, at most 8 items, unique, each a constrained content-addressed URI</td></tr>
+                <tr><td><code>encryption</code></td><td>No</td><td>If present, an XChaCha20-Poly1305 descriptor</td></tr>
+                <tr><td><code>display</code></td><td>No</td><td>If present, presentation hints</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Why each constraint is there</h3>
+
+          <h4><code>title</code></h4>
+          <p>
+            The pattern excludes the entire C0 control range and the delete character. That removes
+            newlines, tabs, and terminal escape sequences from a field that products will render
+            directly. A title is not a place for formatting, and a manifest is untrusted input.
+          </p>
+
+          <h4><code>content_type</code></h4>
+          <p>
+            The pattern requires lowercase, a single slash, and a restricted character set for both
+            the type and subtype. Parameters are not permitted: there is no place for a
+            <code>; charset=</code> suffix or a quoted string. This is narrower than the media-type
+            grammar you may be used to, which is the point. It means two implementations cannot
+            disagree about whether two spellings of the same type are equal, and it removes an
+            injection surface from a field that often reaches a Content-Type header.
+          </p>
+
+          <h4><code>content_sha256</code></h4>
+          <p>
+            Lowercase hexadecimal only. An uppercase digest fails validation. This matters because
+            the manifest is hashed as RFC 8785 JCS output, so a case difference is a different manifest
+            and therefore a different commitment.
+          </p>
+
+          <h4><code>uris</code></h4>
+          <p>
+            At most eight, all unique, and each must match one of exactly three forms:
+          </p>
+          <div class="code">
+            <span class="code-label">Permitted URI forms</span>
+            <pre><code>ipfs://&lt;alphanumeric cid&gt;[/optional path]
+ar://&lt;alphanumeric, underscore, or hyphen&gt;
+sha256://&lt;64 lowercase hex characters&gt;</code></pre>
+          </div>
+          <p>
+            There is no <code>http</code> and no <code>https</code> form. Every permitted scheme is
+            content addressed, so a URI names bytes rather than a location that can serve different
+            bytes tomorrow. The <code>sha256://</code> form names the digest with no retrieval hint
+            at all, which is the honest way to say the content exists but you must already have it.
+          </p>
+          <p>
+            The array is required but its <code>maxItems</code> is 8 with no <code>minItems</code>,
+            so an empty array is valid. That is a deliberate allowance for a chapter whose content
+            is deliberately not distributed.
+          </p>
+
+          <h4><code>encryption</code></h4>
+          <p>
+            One scheme is permitted, <code>xchacha20-poly1305</code>. The nonce is base64 with
+            length exactly 32 characters, which is the encoding of a 24-byte XChaCha20 nonce. A
+            <code>key_commitment_sha256</code> is required alongside it.
+          </p>
+          <p>
+            Note what the commitment is for. It lets a holder of the key confirm they hold the right
+            one before attempting decryption, and it lets two parties agree they mean the same key
+            without exchanging it. It is not a key escrow, and nothing in Tandem can recover content
+            if the key is lost.
+          </p>
+
+          <h4><code>display</code></h4>
+          <p>
+            Three optional hints: <code>fit</code> as one of <code>contain</code>,
+            <code>cover</code>, or <code>native</code>; <code>background</code> as a six-digit hex
+            colour; and <code>alt</code>, at most 500 characters. The <code>alt</code> pattern
+            excludes control characters but deliberately permits <code>0x09</code> tab,
+            <code>0x0a</code> newline, and <code>0x0d</code> carriage return, since alternative text
+            for a long piece of content may reasonably contain line breaks.
+          </p>
+        </section>
+
+        <section id="close" aria-labelledby="close-title">
+          <p class="kicker">Schema 2</p>
+          <h2 id="close-title">2. Close manifest</h2>
+          <p class="lede">
+            The close manifest is the chapter manifest's counterpart, used for the optional
+            statement attached to a cooperative ending. Its structure is deliberately near-identical.
+          </p>
+
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">SAME</span> as the chapter manifest</h4>
+              <ul>
+                <li>The same five required properties</li>
+                <li>The same <code>title</code> pattern and length limits</li>
+                <li>The same <code>content_type</code> grammar</li>
+                <li>The same three URI forms and the same 8-item cap</li>
+                <li>The same encryption and display shapes</li>
+                <li>The same rejection of unknown properties</li>
+              </ul>
+            </div>
+            <div>
+              <h4><span class="side-tag b">DIFFERENT</span> from the chapter manifest</h4>
+              <ul>
+                <li><code>schema</code> is the constant <code>urn:tandem:close</code></li>
+                <li>Its digest feeds the <code>TANDEM/CLOSE\0</code> commitment domain, not <code>TANDEM/CHAPTER\0</code></li>
+                <li>The commitment preimage carries the CLOSE reason byte where a chapter carries its kind byte</li>
+                <li>The on-chain commitment it produces may be omitted entirely by committing 32 zero bytes</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            That last difference is the important one. A MARK with an all-zero chapter commitment is
+            invalid, reason <code>BAD_COMMITMENT</code>, code <code>0x001d</code>. A CLOSE with an
+            all-zero close commitment is perfectly valid and simply means there is no close
+            manifest. A pair can end an object without saying anything about why.
+          </p>
+
+          <p>
+            The two schemas express the same constraints through slightly different JSON structure:
+            the chapter schema factors its patterns into <code>$defs</code> and references them,
+            while the close schema inlines them. Validation behaviour is the same. Do not read
+            anything into the difference, and do not assume a validator that handles one will
+            necessarily exercise the same code path for the other.
+          </p>
+        </section>
+
+        <section id="agreement" aria-labelledby="agreement-title">
+          <p class="kicker">Schema 3</p>
+          <h2 id="agreement-title">3. Agreement envelope</h2>
+          <p class="lede">
+            This is the schema that carries the trust story. One pipeline states its entire view at
+            one height and signs it, so another party can compare rather than believe.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Envelope properties. All four are required.</caption>
+              <thead><tr><th>Property</th><th>Constraint</th></tr></thead>
+              <tbody>
+                <tr><td><code>schema</code></td><td>Exactly <code>urn:tandem:agreement-envelope</code></td></tr>
+                <tr><td><code>key_id</code></td><td>String, 1 to 128 characters, matching <code>^[A-Za-z0-9._:-]+$</code></td></tr>
+                <tr><td><code>tuple</code></td><td>The signed object, described below</td></tr>
+                <tr><td><code>signature</code></td><td>Exactly 128 lowercase hexadecimal characters, a 64-byte Ed25519 signature</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Tuple properties. All fourteen are required, and nothing else is allowed.</caption>
+              <thead><tr><th>Property</th><th>Constraint</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td><code>schema</code></td><td>Exactly <code>urn:tandem:agreement-tuple</code></td><td>Distinguishes the signed object from its envelope</td></tr>
+                <tr><td><code>protocol_id</code></td><td><code>^tndm:(mainnet|signet|testnet4|regtest):[0-9a-f]{64}$</code></td><td>The exact deployment binding, per rule ID-4</td></tr>
+                <tr><td><code>height</code></td><td>Decimal string, no leading zeros</td><td>The block height this tuple describes</td></tr>
+                <tr><td><code>block_hash</code></td><td>64 lowercase hex characters</td><td>The block at that height</td></tr>
+                <tr><td><code>event_root</code></td><td>64 lowercase hex characters</td><td>Rule ROOT-1</td></tr>
+                <tr><td><code>object_state_root</code></td><td>64 lowercase hex characters</td><td>Rule ROOT-2</td></tr>
+                <tr><td><code>chained_root</code></td><td>64 lowercase hex characters</td><td>Rule ROOT-4</td></tr>
+                <tr><td><code>founding_created</code></td><td>Decimal string</td><td>Post-block counter, rule ST-6</td></tr>
+                <tr><td><code>all_objects</code></td><td>Decimal string</td><td>Post-block counter, rule ST-6</td></tr>
+                <tr><td><code>active_objects</code></td><td>Decimal string</td><td>Post-block counter, rule ST-6</td></tr>
+                <tr><td><code>parser_commit</code></td><td>40 lowercase hex characters</td><td>Which parser build produced this</td></tr>
+                <tr><td><code>indexer_commit</code></td><td>40 lowercase hex characters</td><td>Which indexer build produced this</td></tr>
+                <tr><td><code>parser_binary_sha256</code></td><td>64 lowercase hex characters</td><td>Digest of that parser binary</td></tr>
+                <tr><td><code>indexer_binary_sha256</code></td><td>64 lowercase hex characters</td><td>Digest of that indexer binary</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Three details that catch people out</h3>
+
+          <h4>Counters are strings, not numbers</h4>
+          <p>
+            <code>height</code> and all three counters use the pattern
+            <code>^(0|[1-9][0-9]*)$</code>. They are decimal strings with no leading zeros, not JSON
+            numbers. This avoids every floating-point and precision question, and it means
+            <code>"07"</code> is invalid while <code>"0"</code> and <code>"7"</code> are both fine.
+            Preserve them as strings through your whole pipeline. Parsing to a number and
+            re-serializing will eventually produce a different serialized form and a signature that
+            no longer verifies.
+          </p>
+
+          <h4>Only the tuple is signed</h4>
+          <p>
+            The signature covers the RFC 8785 JCS serialization of the <code>tuple</code>
+            object. <code>schema</code>, <code>key_id</code>, and <code>signature</code> at the
+            envelope level are outside it. Never treat <code>key_id</code> as authenticated; use it
+            to select a candidate key, then verify, then apply your own authorization policy to the
+            key that actually verified.
+          </p>
+
+          <h4>The release fields are not supposed to match</h4>
+          <p>
+            When two pipelines are compared, only the nine semantic fields are required to be equal:
+            <code>protocol_id</code>, <code>height</code>, <code>block_hash</code>,
+            <code>event_root</code>, <code>object_state_root</code>, <code>chained_root</code>, and
+            the three counters. The four release fields identify which build spoke, and independent
+            implementations will always differ there. Validate each pipeline's provenance
+            separately, against your own trust policy, rather than comparing them to each other.
+          </p>
+
+          <p>
+            Note also that the tuple describes a height, not a moment. A later release of the same
+            pipeline does not retroactively change the release identity recorded for a height that
+            was already signed. Keep historical tuples with the provenance they were signed with.
+          </p>
+        </section>
+
+        <section id="using" aria-labelledby="using-title">
+          <h2 id="using-title">Using them safely</h2>
+          <ol>
+            <li>Validate against the published files, not a copy you transcribed. Their digests are pinned by the repository verifier and by the independent Rust verifier's input lock.</li>
+            <li>Reject unknown fields. All three schemas already require this; do not relax it in your own validator wrapper.</li>
+            <li>Normalize with RFC 8785 JCS before hashing anything, so semantically identical documents produce identical digests.</li>
+            <li>Keep counters and heights as strings end to end.</li>
+            <li>Treat schema validity and signer authorization as two separate decisions, in that order.</li>
+            <li>Retrieve only the payload named by <code>content_sha256</code>, verify the bytes before display, and enforce your own size and type limits regardless of what the manifest claims.</li>
+            <li>Never execute retrieved content as application code, and never let a manifest field reach a shell, a template, or an HTTP header without escaping.</li>
+          </ol>
+
+          <div class="note warn">
+            <strong>A valid manifest is still untrusted input.</strong>
+            <p>
+              Schema validation constrains shape. It says nothing about whether the person who wrote
+              the manifest is honest, whether the URI serves what it claims, or whether the content
+              is safe to render. A manifest arrives from whoever put a commitment on chain, which is
+              to say from anyone.
+            </p>
+          </div>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="indexing.html">Back: indexer semantics</a>
+          <a href="vectors.html">Next: test vectors</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="../protocol/README.md">Contract index</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

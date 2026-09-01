@@ -19,24 +19,38 @@ const approvedPaths = new Set([
   ".github/PULL_REQUEST_TEMPLATE.md",
   ".github/workflows/verify-public.yml",
   ".gitignore",
+  "assets/dossier.css",
+  "assets/pair-check.js",
   "assets/site.css",
   "assets/site.js",
   "CODE_OF_CONDUCT.md",
   "CONTRIBUTING.md",
   "docs.manifest.json",
+  "docs/conformance.html",
+  "docs/considerations.html",
   "docs/faq.md",
   "docs/getting-started.md",
   "docs/how-it-works.md",
+  "docs/guide.html",
   "docs/index.html",
+  "docs/indexing.html",
   "docs/integrations.md",
+  "docs/pair-check.html",
+  "docs/protocol.html",
   "docs/roadmap.md",
   "docs/safety.md",
+  "docs/schemas.html",
+  "docs/specification.html",
   "docs/use-cases.md",
+  "docs/vectors.html",
+  "docs/verifier.html",
   "docs/what-is-tandem.md",
   "index.html",
   "LICENSE",
+  "llms.txt",
   "protocol/README.md",
   "README.md",
+  "robots.txt",
   "release/spec.json",
   "REPOSITORY_BOUNDARY.md",
   "schemas/agreement-envelope.schema.json",
@@ -45,6 +59,8 @@ const approvedPaths = new Set([
   "scripts/serve.mjs",
   "scripts/verify-public.mjs",
   "SECURITY.md",
+  "sitemap-index.xml",
+  "sitemap.xml",
   "tandem.md",
   "vectors/create-marker.example.json",
   "vectors/generated/golden.json",
@@ -63,7 +79,7 @@ const approvedArtifacts = new Map([
   ["vectors/generated/manifest.json", { bytes: 369, sha256: "d443d9b6e178b95b707620593e471b2146c2747be0f7789dc06f54ce133c33ac" }],
 ]);
 
-const textExtensions = new Set([".css", ".html", ".js", ".json", ".md", ".mjs", ".txt", ".yaml", ".yml"]);
+const textExtensions = new Set([".css", ".html", ".js", ".json", ".md", ".mjs", ".txt", ".xml", ".yaml", ".yml"]);
 const forbiddenTopLevel = new Set([
   "backend",
   "deployments",
@@ -328,6 +344,106 @@ async function verifyWorkflow() {
   if (/\b(?:deploy|publish|release)\b/i.test(workflow)) fail("public workflow must not deploy, publish, or release");
 }
 
+const dossierPages = [
+  "docs/protocol.html",
+  "docs/specification.html",
+  "docs/guide.html",
+  "docs/pair-check.html",
+  "docs/indexing.html",
+  "docs/schemas.html",
+  "docs/vectors.html",
+  "docs/verifier.html",
+  "docs/conformance.html",
+  "docs/considerations.html",
+];
+
+async function verifyDossier() {
+  for (const path of dossierPages) {
+    const html = await readFile(resolve(root, path), "utf8");
+    const essentials = [
+      [/<html lang="en">/i, "language"],
+      [/name="viewport"/i, "responsive viewport"],
+      [/name="description"\s*\n?\s*content="[^"]{80,}"/i, "a description of at least 80 characters"],
+      [/class="skip-link"/i, "skip link"],
+      [/<main\b[^>]*id="dossier-main"/i, "main landmark"],
+      [/Content-Security-Policy/i, "content security policy"],
+      [/mainnet is not active/i, "mainnet status"],
+      [/assets\/dossier\.css/i, "dossier stylesheet"],
+      [/<title>[^<]+<\/title>/i, "title"],
+      [/property="og:title"/i, "Open Graph title"],
+    ];
+    for (const [pattern, label] of essentials) if (!pattern.test(html)) fail(`${path} is missing ${label}`);
+
+    const headings = html.match(/<h1\b/gi) ?? [];
+    if (headings.length !== 1) fail(`${path} must have exactly one h1, found ${headings.length}`);
+    if (/<style\b/i.test(html)) fail(`${path} contains inline style markup`);
+
+    for (const match of html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"/gi)) {
+      if (/^(?:https?:)?\/\//i.test(match[1])) fail(`external runtime dependency found in ${path}: ${match[1]}`);
+    }
+    for (const match of html.matchAll(/<img\b[^>]*>/gi)) {
+      if (!/\balt=/i.test(match[0])) fail(`image without alt text in ${path}`);
+    }
+    for (const match of html.matchAll(/<svg\b[^>]*>/gi)) {
+      if (!/\brole="img"/i.test(match[0]) || !/\baria-labelledby=/i.test(match[0])) {
+        fail(`inline svg without an accessible name in ${path}`);
+      }
+    }
+  }
+
+  // The pair check tool is the only page permitted to make a request, and only to this origin.
+  const tool = await readFile(resolve(root, "docs/pair-check.html"), "utf8");
+  if (!/connect-src 'self'/.test(tool)) fail("the pair check page must declare connect-src 'self'");
+  if (!/<noscript>/i.test(tool)) fail("the pair check page must degrade without scripting");
+
+  const toolScript = await readFile(resolve(root, "assets/pair-check.js"), "utf8");
+  for (const forbidden of ["XMLHttpRequest", "WebSocket", "sendBeacon", "eval(", "localStorage", "document.cookie"]) {
+    if (toolScript.includes(forbidden)) fail(`the pair check script must not use ${forbidden}`);
+  }
+  for (const match of toolScript.matchAll(/fetch\(\s*"([^"]+)"/g)) {
+    if (!match[1].startsWith("../vectors/")) fail(`the pair check script must only read published vectors: ${match[1]}`);
+  }
+}
+
+async function verifySiteFiles(fileSet) {
+  const site = "https://bitcoinuniverseio.github.io/tandem/";
+
+  const robots = await readFile(resolve(root, "robots.txt"), "utf8");
+  if (!/^User-agent: \*/m.test(robots)) fail("robots.txt is missing a user-agent rule");
+  if (!robots.includes(`${site}sitemap.xml`)) fail("robots.txt does not point at the sitemap");
+
+  const sitemap = await readFile(resolve(root, "sitemap.xml"), "utf8");
+  if (!sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>')) fail("sitemap.xml is missing its XML declaration");
+  if (!sitemap.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')) fail("sitemap.xml has the wrong namespace");
+
+  const locations = Array.from(sitemap.matchAll(/<loc>([^<]+)<\/loc>/g), (match) => match[1]);
+  if (locations.length === 0) fail("sitemap.xml lists no locations");
+  for (const location of locations) {
+    if (!location.startsWith(site)) {
+      fail(`sitemap.xml location is outside the published site: ${location}`);
+      continue;
+    }
+    const path = location.slice(site.length);
+    if (path === "" || path.endsWith("/")) continue;
+    if (!fileSet.has(path)) fail(`sitemap.xml lists a path that is not published: ${path}`);
+  }
+  for (const path of dossierPages) {
+    if (!locations.includes(site + path)) fail(`sitemap.xml does not list ${path}`);
+  }
+
+  const sitemapIndex = await readFile(resolve(root, "sitemap-index.xml"), "utf8");
+  if (!sitemapIndex.includes(`${site}sitemap.xml`)) fail("sitemap-index.xml does not reference sitemap.xml");
+
+  const llms = await readFile(resolve(root, "llms.txt"), "utf8");
+  if (!/^# Tandem/m.test(llms)) fail("llms.txt is missing its heading");
+  if (!/mainnet is NOT active/i.test(llms)) fail("llms.txt must state the mainnet status");
+  for (const match of llms.matchAll(/\]\((https:\/\/bitcoinuniverseio\.github\.io\/tandem\/[^)]*)\)/g)) {
+    const path = match[1].slice(site.length);
+    if (path === "" || path.endsWith("/")) continue;
+    if (!fileSet.has(path)) fail(`llms.txt links to a path that is not published: ${path}`);
+  }
+}
+
 const files = await collectFiles();
 const fileSet = new Set(files);
 
@@ -341,6 +457,8 @@ await verifyLocalLinks(files, fileSet);
 await verifyArtifacts();
 await verifySite();
 await verifyDocumentationPage();
+await verifyDossier();
+await verifySiteFiles(fileSet);
 await verifyWorkflow();
 await verifyDependabot();
 

@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="The published Tandem test vectors: every marker encoding, all 26 stable reason codes, the derived identity values, and the event, object-state, and chained roots you can recompute yourself."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem test vectors">
+    <meta property="og:description" content="The repository's golden corpus laid out in full: markers, reasons, 31 validation cases, and every root with the exact formula that reproduces it.">
+    <title>Tandem test vectors</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the vectors</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="pair-check.html">Pair check</a>
+        <a href="conformance.html">Conformance</a>
+      </nav>
+      <a class="header-link" href="../vectors/generated/golden.json">Raw corpus</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Reference</p>
+      <h1>Test vectors</h1>
+      <p class="dossier-lede">
+        Everything on this page is published in this repository under
+        <a href="../vectors/generated/manifest.json">vectors/generated/</a>. The corpus is small on purpose: it
+        fixes the values that two implementations are most likely to get subtly different, and it
+        makes every one of them reproducible with SHA256 alone.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Vector sections">
+          <p>On this page</p>
+          <a href="#files">The files</a>
+          <a href="#identity">Identity</a>
+          <a href="#markers">Marker encodings</a>
+          <a href="#cases">31 validation cases</a>
+          <a href="#roots">Roots</a>
+          <a href="#reproduce">Reproduce them</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="conformance.html">Conformance and checklist</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="files" aria-labelledby="files-title">
+          <h2 id="files-title">The files, and how they bind to each other</h2>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Published vector files and their digests</caption>
+              <thead><tr><th>File</th><th>Purpose</th><th>SHA256 of the file</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><a href="../vectors/generated/manifest.json">vectors/generated/manifest.json</a></td>
+                  <td>Binds the specification, the fixture file, and the vector root</td>
+                  <td><code>d443d9b6e178b95b707620593e471b2146c2747be0f7789dc06f54ce133c33ac</code></td>
+                </tr>
+                <tr>
+                  <td><a href="../vectors/generated/golden.json">vectors/generated/golden.json</a></td>
+                  <td>The fixture corpus itself</td>
+                  <td><code>fc4bee2c20fe94a66a9849f1dc3d73bc407179474e936de29eddef85dcfb5856</code></td>
+                </tr>
+                <tr>
+                  <td><a href="../vectors/create-marker.example.json">vectors/create-marker.example.json</a></td>
+                  <td>A minimal standalone CREATE marker input, using a different binding from the corpus</td>
+                  <td><code>49ee02bc45526953c8fd2e5e71b35fc73458ce4c33811870119113d194308cc8</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The manifest names the specification file, repeats its digest, names the fixture file,
+            repeats the fixture's digest, and publishes a vector root that binds the two. The
+            fixture in turn repeats the specification digest inside itself. Four independent places
+            must agree before you can trust any single value, which is exactly the property you want
+            from a corpus that other implementations are graded against.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>The binding chain</caption>
+              <thead><tr><th>Value</th><th>Content</th></tr></thead>
+              <tbody>
+                <tr><td>Specification digest</td><td><code>caa77ce0122c0b833fc5f099191b54280b0481be325bdc98f2b48b0b905b923f</code></td></tr>
+                <tr><td>Specification byte count</td><td>47,343 bytes, 845 lines, UTF-8, no BOM, LF endings, exactly one final LF</td></tr>
+                <tr><td>Fixture digest</td><td><code>fc4bee2c20fe94a66a9849f1dc3d73bc407179474e936de29eddef85dcfb5856</code></td></tr>
+                <tr><td>Vector root</td><td><code>b7f22caf5c9b9f3562f4d842a60a4bb0daa3f2805a5b8ff73e4d716721882c11</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code">
+            <span class="code-label">The vector root formula, confirmed against the published value</span>
+            <pre><code>vector_root = SHA256(
+  "TANDEM/VECTOR-ROOT\0" ||  <span aria-hidden="true">// 19 bytes</span>
+  "golden.json" ||           <span aria-hidden="true">// the fixture file name, as ASCII</span>
+  00 ||                      <span aria-hidden="true">// one separator byte</span>
+  fixture_sha256_32
+)
+= b7f22caf5c9b9f3562f4d842a60a4bb0daa3f2805a5b8ff73e4d716721882c11</code></pre>
+          </div>
+
+          <p>
+            The independent Rust verifier deliberately does not copy the vector root into its input
+            lock. It pins the fixture file's digest and then derives the root itself, so an
+            incorrect published root would be caught rather than trusted.
+          </p>
+        </section>
+
+        <section id="identity" aria-labelledby="identity-title">
+          <h2 id="identity-title">Identity</h2>
+          <p>
+            The corpus fixes one regtest binding. Every namespace field in every marker below is
+            this namespace, which is the first cross-check available to a new implementation.
+          </p>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Published identity values</caption>
+              <thead><tr><th>Value</th><th>Content</th></tr></thead>
+              <tbody>
+                <tr><td>Protocol identifier</td><td><code>tndm:regtest:1010101010101010101010101010101010101010101010101010101010101010</code></td></tr>
+                <tr><td>Object display identifier</td><td><code>tandem:regtest:1010&hellip;1010:2020&hellip;2020:1</code></td></tr>
+                <tr><td>Namespace commitment</td><td><code>38025b6fb909d2f22226ee9ea7e3a0e895c589792a93393c136ad502c608d221</code></td></tr>
+                <tr><td>Object key</td><td><code>5e355bac07710f3bc3b271902b8deda97c52893518bf9bac8a080c318659cb52</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Both derivations are worked through in <a href="guide.html#binding">guide example 1</a>
+            and recomputed live by the <a href="pair-check.html#derive">pair check tool</a>.
+          </p>
+
+          <h3>The carrier pair</h3>
+          <div class="pair-band">
+            <div>
+              <h4><span class="side-tag a">key0</span> side A</h4>
+              <div class="code"><pre><code>0279be667ef9dcbbac55a0
+6295ce870b07029bfcdb2d
+ce28d959f2815b16f81798</code></pre></div>
+            </div>
+            <div>
+              <h4><span class="side-tag b">key1</span> side B</h4>
+              <div class="code"><pre><code>02c6047f9441ed7d6d3045
+406e95c07cd85c778e4b8c
+ef3ca7abac09b95c709ee5</code></pre></div>
+            </div>
+          </div>
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Derived carrier, from rule PAIR-2</caption>
+              <thead><tr><th>Value</th><th>Content</th></tr></thead>
+              <tbody>
+                <tr><td>Witness script, 71 bytes</td><td><code>52210279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f817982102c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee552ae</code></td></tr>
+                <tr><td>scriptPubKey, 34 bytes</td><td><code>00209b984c7bae3efddc3a3f0a20ff81bfe89ed1fe07ff13e562149ee654bed845db</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="markers" aria-labelledby="markers-title">
+          <h2 id="markers-title">Marker encodings</h2>
+          <p>
+            One valid marker per operation, published as both payload and full script. These are the
+            fastest way to find an encoding bug: if your serializer produces different bytes for the
+            same field values, the difference is visible immediately.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Published marker sizes, all matching rule REC-5 exactly</caption>
+              <thead><tr><th>Operation</th><th>Payload bytes</th><th>Script bytes</th><th>Distinguishing fields</th></tr></thead>
+              <tbody>
+                <tr><td>INIT</td><td>59</td><td>61</td><td><code>H_open</code> 1108, <code>H_close</code> 5428, carrier 20,000, refund delay 52,560</td></tr>
+                <tr><td>CREATE</td><td>40</td><td>42</td><td><code>state_vout</code> <code>0x01</code>, namespace</td></tr>
+                <tr><td>MARK</td><td>78</td><td>81</td><td><code>state_seq</code> 1, kind note, flags 0, nonzero chapter commitment</td></tr>
+                <tr><td>ROTATE</td><td>44</td><td>46</td><td><code>state_seq</code> 2</td></tr>
+                <tr><td>CLOSE</td><td>80</td><td>83</td><td><code>state_vout</code> <code>0xff</code>, <code>state_seq</code> 3, reason mutual completion</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code">
+            <span class="code-label">CREATE marker script, 42 bytes</span>
+            <pre><code>6a28544e444d0103010138025b6fb909d2f22226ee9ea7e3a0e895c589792a93
+393c136ad502c608d221</code></pre>
+          </div>
+
+          <div class="code">
+            <span class="code-label">CLOSE marker script, 83 bytes, the largest permitted</span>
+            <pre><code>6a4c50544e444d010304ff38025b6fb909d2f22226ee9ea7e3a0e895c589792a
+93393c136ad502c608d221030000000000000042424527b3f6228a8ff8223239
+35c83822439be948d634100c138faeff2402a1</code></pre>
+          </div>
+
+          <p>
+            83 bytes is the maximum Tandem marker script, corresponding to the 80-byte maximum
+            payload. Note the encoding boundary between them: CREATE and ROTATE, at 40 and 44 bytes,
+            use a direct push, while MARK and CLOSE, at 78 and 80 bytes, must use
+            <code>OP_PUSHDATA1</code> because a direct push tops out at 75. Using the wrong one is
+            <code>BAD_MARKER_ENCODING_OR_LENGTH</code>. The
+            <a href="pair-check.html#records">pair check tool</a> will show you that failure if you
+            edit a push byte.
+          </p>
+
+          <h3>Two commitments</h3>
+          <div class="scroll-x">
+            <table class="tbl">
+              <thead><tr><th>Commitment</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td>Chapter, from the MARK</td><td><code>de2e2206a8bf7075457a777a271a467a26faa75f82ceec3a2ee708c0c732b84a</code></td></tr>
+                <tr><td>Close, from the CLOSE</td><td><code>42424527b3f6228a8ff822323935c83822439be948d634100c138faeff2402a1</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="cases" aria-labelledby="cases-title">
+          <h2 id="cases-title">31 validation cases</h2>
+          <p class="lede">
+            The corpus fixes 31 named validation cases: six valid operations and 25 rejections. Every
+            one of the 26 stable reasons in the registry is exercised. For each case the corpus
+            records the emitted event type, validity class, and reason, which is what an
+            implementation must reproduce.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>All 31 cases, with the event each produces</caption>
+              <thead><tr><th>Case</th><th>Reason</th><th>Class</th><th>Event type</th><th>Terminal</th></tr></thead>
+              <tbody>
+                <tr><td><code>valid-init</code></td><td><code>VALID</code></td><td>1</td><td>INIT</td><td>no</td></tr>
+                <tr><td><code>valid-create</code></td><td><code>VALID</code></td><td>1</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>valid-mark</code></td><td><code>VALID</code></td><td>1</td><td>MARK</td><td>no</td></tr>
+                <tr><td><code>valid-rotate</code></td><td><code>VALID</code></td><td>1</td><td>ROTATE</td><td>no</td></tr>
+                <tr><td><code>valid-close</code></td><td><code>VALID</code></td><td>1</td><td>CLOSE</td><td>yes</td></tr>
+                <tr><td><code>valid-refund</code></td><td><code>VALID</code></td><td>1</td><td>REFUND</td><td>yes</td></tr>
+                <tr><td><code>reject-multiple-markers</code></td><td><code>MULTIPLE_MARKERS</code></td><td>0</td><td>INVALID</td><td>no</td></tr>
+                <tr><td><code>reject-marker-encoding</code></td><td><code>BAD_MARKER_ENCODING_OR_LENGTH</code></td><td>0</td><td>INVALID</td><td>no</td></tr>
+                <tr><td><code>reject-marker-format</code></td><td><code>UNKNOWN_MARKER_FORMAT</code></td><td>0</td><td>INVALID</td><td>no</td></tr>
+                <tr><td><code>reject-network</code></td><td><code>WRONG_NETWORK</code></td><td>0</td><td>INVALID</td><td>no</td></tr>
+                <tr><td><code>reject-opcode</code></td><td><code>UNKNOWN_OPCODE</code></td><td>0</td><td>INVALID</td><td>no</td></tr>
+                <tr><td><code>reject-namespace</code></td><td><code>WRONG_NAMESPACE</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-reserved</code></td><td><code>UNSUPPORTED_OR_RESERVED_FIELD</code></td><td>0</td><td>INVALID</td><td>no</td></tr>
+                <tr><td><code>reject-tx-version</code></td><td><code>BAD_TX_VERSION_OR_LOCKTIME</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-input-count</code></td><td><code>BAD_INPUT_COUNT_OR_ORDER</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-output-count</code></td><td><code>BAD_OUTPUT_COUNT_OR_ORDER</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-unconfirmed-input</code></td><td><code>UNCONFIRMED_OR_SAME_BLOCK_PREVOUT</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-input-script</code></td><td><code>BAD_INPUT_SCRIPT</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-key-binding</code></td><td><code>BAD_KEY_ORDER_OR_BINDING</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-signature</code></td><td><code>BAD_SIGNATURE_OR_SIGHASH</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-output-value</code></td><td><code>BAD_OUTPUT_SCRIPT_OR_VALUE</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-nonpositive-fee</code></td><td><code>NONPOSITIVE_OR_INVALID_FEE</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-fee-split</code></td><td><code>BAD_FEE_SPLIT_OR_CHANGE</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-inactive-predecessor</code></td><td><code>PREDECESSOR_NOT_ACTIVE</code></td><td>0</td><td>MARK</td><td>no</td></tr>
+                <tr><td><code>reject-state-sequence</code></td><td><code>BAD_STATE_SEQUENCE</code></td><td>2</td><td>EXITED_NONCANONICAL</td><td>yes</td></tr>
+                <tr><td><code>reject-successor</code></td><td><code>BAD_SUCCESSOR</code></td><td>2</td><td>EXITED_NONCANONICAL</td><td>yes</td></tr>
+                <tr><td><code>reject-commitment</code></td><td><code>BAD_COMMITMENT</code></td><td>2</td><td>EXITED_NONCANONICAL</td><td>yes</td></tr>
+                <tr><td><code>reject-height</code></td><td><code>BAD_HEIGHT_OR_PHASE</code></td><td>0</td><td>CREATE</td><td>no</td></tr>
+                <tr><td><code>reject-refund-maturity</code></td><td><code>BAD_REFUND_SHAPE_OR_MATURITY</code></td><td>2</td><td>EXITED_NONCANONICAL</td><td>yes</td></tr>
+                <tr><td><code>reject-multiple-carriers</code></td><td><code>MULTIPLE_CARRIERS</code></td><td>2</td><td>EXITED_NONCANONICAL, twice</td><td>yes</td></tr>
+                <tr><td><code>reject-unmarked-carrier-spend</code></td><td><code>UNMARKED_CARRIER_SPEND</code></td><td>2</td><td>EXITED_NONCANONICAL</td><td>yes</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>The three most instructive rows</h3>
+          <p>
+            <strong><code>reject-namespace</code></strong> emits event type CREATE, not INVALID, even
+            though it is class 0. That is rule INV-5's population rule at work: the marker exposed
+            marker format <code>0x01</code> and a defined opcode, so the class 0 event carries the
+            attempted operation type. Compare it with <code>reject-opcode</code>, where the opcode
+            was not defined, so the type falls back to INVALID.
+          </p>
+          <p>
+            <strong><code>reject-commitment</code></strong> is class 2 with a terminal event, not
+            class 0. A zero chapter commitment is a late failure, and by the time it is reached the
+            transaction has already consumed a carrier. The object dies. Compare it with
+            <code>reject-tx-version</code>, an early failure in the same corpus that is class 0
+            because the fixture has no carrier spend.
+          </p>
+          <p>
+            <strong><code>reject-multiple-carriers</code></strong> is the only case that emits two
+            events from one transaction, each terminal, ordered by binary object key with
+            <code>sub_index</code> 0 and 1. If your implementation emits one event here, or emits
+            two in a different order, your event root will differ.
+          </p>
+        </section>
+
+        <section id="roots" aria-labelledby="roots-title">
+          <h2 id="roots-title">Roots</h2>
+          <p class="lede">
+            The corpus publishes complete preimages, not just results. That means you can find the
+            exact byte where your implementation diverges, rather than only learning that it does.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Measured lengths, taken from the published preimages themselves</caption>
+              <thead><tr><th>Preimage</th><th>Domain tag</th><th>Field bytes</th><th>Total</th></tr></thead>
+              <tbody>
+                <tr><td>Event leaf</td><td>13</td><td>358</td><td>371</td></tr>
+                <tr><td>Object-state leaf</td><td>20</td><td>184</td><td>204</td></tr>
+                <tr><td>Chained block root</td><td>17</td><td>192</td><td>209</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="note errata">
+            <strong>The event leaf total is 371, not 374.</strong>
+            <p>
+              tandem.md section 13.2 states a 16-byte domain tag and a 374-byte total. The tag
+              <code>TANDEM/EVENT\0</code> is 13 bytes and the published preimages are 371 bytes. The
+              358-byte field block in the same sentence is correct. See
+              <a href="specification.html#errata">erratum 1</a>, and watch the
+              <a href="pair-check.html#roots">tool measure it</a> in your browser.
+            </p>
+          </div>
+
+          <h3>Published example block</h3>
+          <p>
+            The roots section fixes one block-shaped example: three event leaves and two object
+            snapshot leaves, at height 1200 with block hash <code>b0b0&hellip;b0b0</code>.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>The three published event leaves</caption>
+              <thead><tr><th><code>tx_index</code></th><th><code>event_index</code></th><th>Type</th><th>Class</th><th>Reason</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td>0</td><td>MARK</td><td>1</td><td><code>VALID</code></td></tr>
+                <tr><td>1</td><td>0</td><td>INVALID</td><td>0</td><td><code>BAD_MARKER_ENCODING_OR_LENGTH</code></td></tr>
+                <tr><td>2</td><td><code>0xffffffff</code></td><td>EXITED_NONCANONICAL</td><td>2</td><td><code>UNMARKED_CARRIER_SPEND</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The third leaf shows the no-marker rule in practice: its <code>event_index</code> is
+            <code>0xffffffff</code> rather than a vout, because there was no marker to take a vout
+            from. The second leaf shows the namespace population rule: its namespace field is
+            <code>zero32</code>, because a payload that fails encoding is never structurally decoded
+            far enough to extract one.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Published roots for that block, all reproducible with SHA256 alone</caption>
+              <thead><tr><th>Root</th><th>Value</th></tr></thead>
+              <tbody>
+                <tr><td>Event root</td><td><code>475b25d221ecaa3abae67c5a4828da0b4cfe752d6cf1b55fa2dff861fae046ce</code></td></tr>
+                <tr><td>Object-state root</td><td><code>67ec64ab4c8645ed0d500ea71032c46026254241575979c26b9f7b207e110d79</code></td></tr>
+                <tr><td>Pre-INIT state root</td><td><code>3b78dccfc48ff451703584532a1202fbccf98e456e514f7bb6ec50889eb640a0</code></td></tr>
+                <tr><td>Chained block root</td><td><code>c54cd3c6423a7a35f6fa37ecceed0387e4398c55f8f6a90711c4fb906322e260</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            The event tree has three leaves, so it exercises the odd-leaf rule: at the first level
+            the third leaf is duplicated and hashed with itself. The corpus publishes every
+            intermediate Merkle level, so if your root differs you can see which level first
+            diverges. The object tree has two leaves and needs no duplication.
+          </p>
+
+          <p>
+            The chained root closes the loop. Reconstructing it from the pre-INIT state root, the
+            block hash, height 1200, the two component roots, and the post-block counters
+            <code>founding_created</code> 1, <code>all_objects</code> 2, and
+            <code>active_objects</code> 1 reproduces the published value exactly. That single
+            32-byte number is what two independent pipelines actually compare.
+          </p>
+        </section>
+
+        <section id="reproduce" aria-labelledby="reproduce-title">
+          <h2 id="reproduce-title">Reproduce them yourself</h2>
+          <p>
+            You do not have to take any of this on faith, and you should not. There are three
+            independent ways to check the corpus, in increasing order of effort.
+          </p>
+
+          <ol>
+            <li>
+              <strong>In your browser.</strong> Open the
+              <a href="pair-check.html#roots">pair check tool</a>. It loads this repository's
+              published corpus, rehashes every preimage, rebuilds both Merkle trees, and reports
+              each result individually.
+            </li>
+            <li>
+              <strong>With the repository verifier.</strong> Run <code>node scripts/verify-public.mjs</code>
+              from the repository root. It checks the specification byte contract, every published
+              artifact digest, and the manifest-to-fixture binding.
+            </li>
+            <li>
+              <strong>With the independent Rust verifier.</strong> See
+              <a href="verifier.html">the verifier page</a>. It recomputes the vector root rather
+              than trusting it, and shares no code with the implementation that produced the corpus.
+            </li>
+          </ol>
+
+          <div class="note">
+            <strong>What the corpus does not contain.</strong>
+            <p>
+              There are no full raw transactions, no signatures to verify, no block data, and no
+              live network results. The validation cases record the expected event for each named
+              scenario, not the bytes of a transaction that produces it. A corpus that exercises
+              signature checking, fee arithmetic against real amounts, and multi-block reorganization
+              would be a larger artifact than this one, and this repository does not publish it.
+              Treat the corpus as necessary conformance evidence, not sufficient.
+            </p>
+          </div>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="schemas.html">Back: JSON Schema reference</a>
+          <a href="verifier.html">Next: independent verifier</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="../vectors/generated/golden.json">Golden corpus</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>

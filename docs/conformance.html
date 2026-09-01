@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="What a Tandem implementation must do to claim conformance: the required behaviour, the evidence that supports each claim, and an ordered implementation checklist you can work through."
+    >
+    <meta name="theme-color" content="#10120f">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    >
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Tandem conformance and implementation checklist">
+    <meta property="og:description" content="The conformance requirements for a Tandem implementation, the evidence behind each one, and an ordered build checklist.">
+    <title>Tandem conformance and implementation checklist</title>
+    <link rel="stylesheet" href="../assets/site.css">
+    <link rel="stylesheet" href="../assets/dossier.css">
+  </head>
+  <body class="dossier">
+    <a class="skip-link" href="#dossier-main">Skip to the page</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../index.html#top" aria-label="Tandem home">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </a>
+      <nav class="site-nav" aria-label="Dossier shortcuts">
+        <a href="protocol.html">Overview</a>
+        <a href="specification.html">Specification</a>
+        <a href="vectors.html">Vectors</a>
+        <a href="verifier.html">Verifier</a>
+      </nav>
+      <a class="header-link" href="pair-check.html">Pair check</a>
+    </header>
+
+    <div class="dossier-hero">
+      <p class="eyebrow">Conformance</p>
+      <h1>What it takes to say<br><em>this implements Tandem.</em></h1>
+      <p class="dossier-lede">
+        Conformance is not a verdict about individual transactions. It is a claim that your
+        implementation produces the same events, the same reason codes, the same state, and the same
+        three roots as any other conforming implementation, at every height. This page sets out what
+        that requires and gives you an order to build it in.
+      </p>
+      <p class="dossier-status"><i aria-hidden="true"></i> Protocol finalized. Mainnet is not active.</p>
+    </div>
+
+    <div class="dossier-shell">
+      <aside class="dossier-side">
+        <nav aria-label="Conformance sections">
+          <p>On this page</p>
+          <a href="#claim">The conformance claim</a>
+          <a href="#requirements">Requirements</a>
+          <a href="#evidence">Evidence you can produce today</a>
+          <a href="#checklist">Implementation checklist</a>
+          <a href="#pitfalls">Where implementations go wrong</a>
+          <a href="#product">If you are building a product</a>
+          <hr>
+          <p>Dossier</p>
+          <a href="protocol.html">Overview</a>
+          <a href="specification.html">Normative specification</a>
+          <a href="guide.html">Guide and worked examples</a>
+          <a href="pair-check.html">Pair check tool</a>
+          <a href="indexing.html">Indexer semantics</a>
+          <a href="schemas.html">JSON Schema reference</a>
+          <a href="vectors.html">Test vectors</a>
+          <a href="verifier.html">Independent verifier</a>
+          <a href="considerations.html">Security, limits, changelog</a>
+        </nav>
+      </aside>
+
+      <main class="dossier-main" id="dossier-main">
+        <section id="claim" aria-labelledby="claim-title">
+          <h2 id="claim-title">The conformance claim</h2>
+          <p class="lede">
+            The specification states it as invariant 12: given the same deployment binding, the same
+            exact specification bytes, and the same blocks on the active chain, independent
+            implementations produce identical events, reason codes, state, counters, event roots,
+            object-state roots, and chained roots at every height.
+          </p>
+          <p>
+            Everything else on this page follows from that sentence. Note how much it demands beyond
+            agreeing on valid or invalid. Two implementations that reject the same transactions for
+            different reasons are both nonconforming, because their event leaves differ, so their
+            event roots differ, so every chained root after that block differs forever.
+          </p>
+          <div class="note">
+            <strong>There is no conformance authority.</strong>
+            <p>
+              Nobody issues a Tandem conformance certificate, and this repository does not run a
+              test service. Conformance is something you demonstrate with reproducible evidence
+              against published artifacts, and that anyone else can re-run. That is the whole
+              mechanism.
+            </p>
+          </div>
+        </section>
+
+        <section id="requirements" aria-labelledby="requirements-title">
+          <h2 id="requirements-title">Requirements</h2>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>What a conforming implementation must do, and the rules that define it</caption>
+              <thead><tr><th>Requirement</th><th>Rules</th></tr></thead>
+              <tbody>
+                <tr><td>Bind to exactly one network, one configured INIT txid, and one specification digest, selected by configuration and never by discovery</td><td>ID-1, ID-2</td></tr>
+                <tr><td>Derive the namespace commitment and object keys by the exact preimages, using wire byte order for transaction identifiers and never reversing raw digests</td><td>ID-5, ID-6</td></tr>
+                <tr><td>Detect marker candidates by the broad rule, so that malformed markers remain detectable and cannot evade multiple-marker counting</td><td>REC-1, REC-2</td></tr>
+                <tr><td>Remove foreign INIT candidates before counting markers</td><td>REC-3</td></tr>
+                <tr><td>Enforce the exact script and payload lengths, minimal push encoding, and absence of trailing bytes</td><td>REC-4, REC-5, REC-6</td></tr>
+                <tr><td>Enforce every fixed payload field, including reserved bytes, flags, defined kinds, and defined reasons</td><td>REC-7, REC-8, REC-9</td></tr>
+                <tr><td>Enforce the key pair rules: valid points, distinct, sorted, and bound to their required roles</td><td>PAIR-1, PAIR-4</td></tr>
+                <tr><td>Enforce the exact 71-byte witness script and the four-element carrier witness stack in order</td><td>PAIR-2, PAIR-3</td></tr>
+                <tr><td>Enforce sequence continuity, carrier continuity, and equal terminal payouts</td><td>PAIR-5, PAIR-6, PAIR-7</td></tr>
+                <tr><td>Enforce the exact fee arithmetic, including the ceiling and floor split that gives the odd satoshi to side A</td><td>PAIR-3.3</td></tr>
+                <tr><td>Enforce every operation template exactly, with exact input and output counts, roles, and sequences</td><td>OP-1 to OP-6</td></tr>
+                <tr><td>Require confirmation in a strictly earlier block for every required prevout</td><td>OP-6 note</td></tr>
+                <tr><td>Apply the exact state machine, including terminating an object on any confirmed carrier spend that does not validate</td><td>ST-1, ST-2, ST-3</td></tr>
+                <tr><td>Maintain the three post-block counters exactly</td><td>ST-6</td></tr>
+                <tr><td>Apply the dispatch order, including its precedence over numeric reason order</td><td>INV-1, INV-2</td></tr>
+                <tr><td>Return the lowest failing reason code within a single-marker operation</td><td>INV-3, INV-4</td></tr>
+                <tr><td>Use the stable reason registry with its permanent names and numeric values</td><td>INV-5</td></tr>
+                <tr><td>Compute event leaves, object-state leaves, both Merkle roots with odd-leaf duplication, and the chained root, for every block including empty ones</td><td>ROOT-1 to ROOT-4</td></tr>
+                <tr><td>Reverse block application exactly on disconnection, before applying any replacement branch</td><td>ROOT-4</td></tr>
+                <tr><td>Exclude mempool observations from state, counters, and roots entirely</td><td>ST-6</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="evidence" aria-labelledby="evidence-title">
+          <h2 id="evidence-title">Evidence you can produce today</h2>
+          <p class="lede">
+            These are reproducible now, against published artifacts, with no network and no
+            permission required.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Available conformance evidence and its coverage</caption>
+              <thead><tr><th>Evidence</th><th>Covers</th><th>Does not cover</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Specification digest and byte contract</td>
+                  <td>That you are reading the same protocol as everyone else</td>
+                  <td>Anything about your parser</td>
+                </tr>
+                <tr>
+                  <td>The five published marker encodings</td>
+                  <td>Payload field layout, exact lengths, push minimality boundaries</td>
+                  <td>Transaction-level rules, signatures, state</td>
+                </tr>
+                <tr>
+                  <td>Identity derivations</td>
+                  <td>Namespace and object key preimages, and byte-order handling</td>
+                  <td>Everything downstream of identity</td>
+                </tr>
+                <tr>
+                  <td>The carrier derivation</td>
+                  <td>Key sorting, witness script bytes, P2WSH construction</td>
+                  <td>Signature verification</td>
+                </tr>
+                <tr>
+                  <td>The 31 validation cases</td>
+                  <td>All 26 reason codes, and the event type and class each produces</td>
+                  <td>Fee arithmetic against real amounts, real signatures, multi-block behaviour</td>
+                </tr>
+                <tr>
+                  <td>The published preimages and Merkle levels</td>
+                  <td>Leaf field order, domain tags, odd-leaf duplication, both roots</td>
+                  <td>Root computation over a real chain</td>
+                </tr>
+                <tr>
+                  <td>The chained root reconstruction</td>
+                  <td>The chaining formula and counter encoding</td>
+                  <td>Chaining across many blocks and across a reorganization</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Read the right-hand column carefully. The published corpus is a necessary conformance
+            gate, not a sufficient one. It contains no raw transactions, no signatures, no block
+            data, and no reorganization scenarios. An implementation that passes every published
+            vector has demonstrated that its encodings and hashing are right. It has not yet
+            demonstrated that its transaction validation or its rollback is.
+          </p>
+
+          <div class="note warn">
+            <strong>Do not claim conformance from the corpus alone.</strong>
+            <p>
+              The accurate statement is that your implementation reproduces every published Tandem
+              vector. That is a real and checkable claim. Claiming full protocol conformance
+              requires evidence for the parts the corpus does not reach, which you would have to
+              produce and publish yourself.
+            </p>
+          </div>
+        </section>
+
+        <section id="checklist" aria-labelledby="checklist-title">
+          <h2 id="checklist-title">Implementation checklist</h2>
+          <p class="lede">
+            Build in this order. Each stage is checkable before the next one is written, which is
+            the only realistic way to find a hashing or ordering mistake before it is buried.
+          </p>
+
+          <h3>Stage 1: bytes</h3>
+          <ol>
+            <li>Hash <a href="../tandem.md">tandem.md</a> as raw bytes. Compare the digest, byte count, and line count against <a href="../release/spec.json">release/spec.json</a>. Do not normalize whitespace or line endings before hashing.</li>
+            <li>Hash <a href="../vectors/generated/golden.json">golden.json</a> and compare it against the fixture digest in <a href="../vectors/generated/manifest.json">the vector manifest</a>.</li>
+            <li>Derive the vector root from the fixture digest and confirm it equals the published root. Derive it, do not copy it.</li>
+            <li>Implement the primitive encodings: unsigned little-endian integers, the wire and display hash orders, and the rule that a raw digest is never reversed.</li>
+          </ol>
+
+          <h3>Stage 2: identity</h3>
+          <ol start="5">
+            <li>Implement the namespace commitment. Confirm it reproduces the published namespace for the published binding.</li>
+            <li>Implement the object key. Confirm it reproduces the published object key.</li>
+            <li>Implement the protocol identifier and object display identifier strings, and use binary keys everywhere internally.</li>
+          </ol>
+
+          <h3>Stage 3: markers</h3>
+          <ol start="8">
+            <li>Implement candidate detection by the broad rule, including partial payloads and non-minimal pushes.</li>
+            <li>Implement foreign INIT removal, keyed on payload byte 6 and the configured txid.</li>
+            <li>Implement strict parsing: complete prefix, length bounds, declared length equal to present length, no trailing bytes, minimal push, exact per-opcode length.</li>
+            <li>Implement all five payload grammars, with every fixed field, reserved byte, and defined-value set enforced.</li>
+            <li>Confirm all five published marker scripts parse to their published operation, payload size, and script size.</li>
+          </ol>
+
+          <h3>Stage 4: transactions</h3>
+          <ol start="13">
+            <li>Implement P2WPKH and carrier witness shape checks, including the leading empty element and signature order.</li>
+            <li>Implement key validation: on-curve, distinct, sorted, HASH160-bound to the correct role.</li>
+            <li>Implement signature verification with strict DER, low-S, <code>SIGHASH_ALL</code>, SegWit v0 hashing, and the exact prevout amount.</li>
+            <li>Implement each operation template exactly, with exact counts, roles, and sequences.</li>
+            <li>Implement checked fee arithmetic that cannot wrap, then the exact splits including the ceiling and floor tie-break.</li>
+            <li>Implement confirmation provenance as a strictly-earlier-block test.</li>
+            <li>Implement REFUND recognition, including the exact sequence value and consensus maturity.</li>
+          </ol>
+
+          <h3>Stage 5: classification and state</h3>
+          <ol start="20">
+            <li>Implement the top-level dispatch in its exact step order.</li>
+            <li>Implement single-marker validation in ascending reason-code order, returning the lowest failing code, and deferring state-dependent checks that cannot be made.</li>
+            <li>Implement the state machine and every state delta, including terminal transitions.</li>
+            <li>Implement the three counters as post-block values.</li>
+            <li>Confirm all 31 published validation cases produce the published reason, class, and event type.</li>
+          </ol>
+
+          <h3>Stage 6: roots</h3>
+          <ol start="25">
+            <li>Implement the event leaf preimage. Confirm each published preimage hashes to its published leaf, and confirm its length is 371 bytes, not 374.</li>
+            <li>Implement the object-state leaf preimage. Confirm the published preimages and the 204-byte length.</li>
+            <li>Implement both Merkle trees with odd-leaf duplication and the single-leaf shortcut. Confirm every published intermediate level.</li>
+            <li>Implement the empty-set roots for both trees.</li>
+            <li>Implement the chained root, and confirm it for the published block including its counters.</li>
+            <li>Emit a root for every block from the INIT confirmation block onward, including blocks with no events.</li>
+          </ol>
+
+          <h3>Stage 7: chain handling</h3>
+          <ol start="31">
+            <li>Implement block connection as an atomic unit: events, deltas, both roots, counters, chained root.</li>
+            <li>Implement block disconnection as an exact reversal, completing before any replacement branch is applied.</li>
+            <li>Confirm that a disconnect and reconnect of the same block returns you to an identical chained root.</li>
+            <li>Keep mempool observations in storage with no path into state, counters, or roots.</li>
+          </ol>
+
+          <h3>Stage 8: publishing your view</h3>
+          <ol start="35">
+            <li>Emit agreement tuples matching <a href="../schemas/agreement-envelope.schema.json">the published schema</a>, with counters and heights as decimal strings.</li>
+            <li>Normalize the tuple with RFC 8785 JCS and sign only the tuple.</li>
+            <li>Record your own release provenance per height, and do not rewrite historical provenance on a later release.</li>
+            <li>Compare only the nine semantic fields against another pipeline, never the four release fields.</li>
+            <li>Fail closed on disagreement, on any missing dependency, and on a stale tip.</li>
+          </ol>
+        </section>
+
+        <section id="pitfalls" aria-labelledby="pitfalls-title">
+          <h2 id="pitfalls-title">Where implementations go wrong</h2>
+          <p>
+            Each of these is a real hazard that the rules single out, and each produces silent
+            divergence rather than an obvious error.
+          </p>
+
+          <div class="scroll-x">
+            <table class="tbl">
+              <caption>Common divergence causes</caption>
+              <thead><tr><th>Mistake</th><th>Symptom</th></tr></thead>
+              <tbody>
+                <tr><td>Reversing a raw digest as though it were a txid</td><td>Namespace and object keys differ from everyone else's, and nothing else works</td></tr>
+                <tr><td>Accepting a same-block prevout</td><td>Occasional extra valid events that another implementation rejects</td></tr>
+                <tr><td>Returning a true but not lowest reason code</td><td>Verdicts agree, event roots do not</td></tr>
+                <tr><td>Padding the event preimage to 374 bytes</td><td>Every event leaf differs, so every root differs from the first event onward</td></tr>
+                <tr><td>Skipping blocks with no Tandem events</td><td>Chained roots diverge permanently from the first skipped block</td></tr>
+                <tr><td>Giving the odd fee satoshi to side B</td><td>Valid transactions rejected, or invalid ones accepted, on odd fees only</td></tr>
+                <tr><td>Ignoring an invalid carrier spend instead of terminating the object</td><td>Objects that should be dead stay active, so object-state roots diverge</td></tr>
+                <tr><td>Emitting one event for a multiple-carrier spend</td><td>Event count and ordering differ, so the event root differs</td></tr>
+                <tr><td>Parsing agreement counters as numbers and re-serializing</td><td>Signatures stop verifying at large values or on round trips</td></tr>
+                <tr><td>Letting a mempool sighting satisfy a predecessor requirement</td><td>Constructed transactions fail confirmation provenance once mined</td></tr>
+                <tr><td>Sorting object leaves by display identifier rather than binary key</td><td>Object-state root differs whenever ordering differs between the two</td></tr>
+                <tr><td>Treating <code>key_id</code> as authenticated</td><td>An unsigned envelope field is trusted to select trust</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="product" aria-labelledby="product-title">
+          <h2 id="product-title">If you are building a product</h2>
+          <p>
+            Parser conformance is one concern. Shipping something to people who hold keys is
+            another, and the second one has its own rules.
+          </p>
+          <ul>
+            <li>Label the network and the verification status wherever state is shown. Never present state from a height where authorized pipelines disagree.</li>
+            <li>Keep mainnet construction and broadcast unavailable. Mainnet is not active, and no repository, website, or funded address changes that.</li>
+            <li>Fail closed for state-changing actions during any indexer disagreement or unreadiness.</li>
+            <li>Complete, export, checksum, and restore-test every recovery transaction before its parent is broadcast. The exit is prepared before the move, not after.</li>
+            <li>Reconstruct and display inputs, outputs, amounts, scripts, fees, sequences, locktime, key order, and commitments before requesting a signature. Blind signing defeats the pairing property entirely.</li>
+            <li>Never request a seed phrase or a raw private key, and never accept one if offered.</li>
+            <li>Treat all retrieved content as untrusted. Enforce your own size and type limits, render safely, and never execute retrieved content as application code.</li>
+            <li>Explain permanence and correlation before a user commits personal, legal, location, or relationship data to a public chain.</li>
+          </ul>
+
+          <div class="note">
+            <strong>There is no marketplace to integrate with.</strong>
+            <p>
+              The Bitcoin Universe capability snapshot lists 38 protocols, 29 of them with a
+              marketplace entry. Tandem has no entry at all, so no Universe surface implements a
+              buy, sell, list, or transfer action for a Tandem object. If your product needs a trade
+              path, Tandem does not provide one and this repository does not describe one.
+            </p>
+          </div>
+        </section>
+
+        <nav class="page-nav" aria-label="Dossier pagination">
+          <a href="verifier.html">Back: independent verifier</a>
+          <a href="considerations.html">Next: security, limits, changelog</a>
+        </nav>
+      </main>
+    </div>
+
+    <footer class="site-footer docs-footer">
+      <div class="wordmark footer-wordmark">
+        <span class="wordmark-mark" aria-hidden="true"><i></i><i></i></span>
+        <span>Tandem</span>
+      </div>
+      <p>One Bitcoin-native object, controlled together.</p>
+      <nav aria-label="Footer navigation">
+        <a href="../index.html">Product</a>
+        <a href="protocol.html">Dossier</a>
+        <a href="vectors.html">Test vectors</a>
+        <a href="../REPOSITORY_BOUNDARY.md">Repository boundary</a>
+      </nav>
+      <small>MIT licensed. Mainnet is not active.</small>
+    </footer>
+  </body>
+</html>
