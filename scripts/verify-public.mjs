@@ -23,6 +23,7 @@ const approvedPaths = new Set([
   "assets/site.js",
   "CODE_OF_CONDUCT.md",
   "CONTRIBUTING.md",
+  "docs.manifest.json",
   "docs/faq.md",
   "docs/getting-started.md",
   "docs/how-it-works.md",
